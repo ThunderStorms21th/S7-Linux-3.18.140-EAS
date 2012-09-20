@@ -242,18 +242,18 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		if (test_task_flag(tsk, TIF_MEMALLOC))
 			continue;
 #endif
+
+		if (time_before_eq(jiffies, lowmem_deathpending_timeout)) {
+			if (test_task_flag(tsk, TIF_MEMDIE)) {
+				rcu_read_unlock();
+				return 0;
+			}
+		}
+
 		p = find_lock_task_mm(tsk);
 		if (!p)
 			continue;
 
-		if (test_tsk_thread_flag(p, TIF_MEMDIE) &&
-		    time_before_eq(jiffies, lowmem_deathpending_timeout)) {
-			task_unlock(p);
-			rcu_read_unlock();
-			/* give the system time to free up the memory */
-			msleep_interruptible(20);
-			return 0;
-		}
 		oom_score_adj = p->signal->oom_score_adj;
 		if (oom_score_adj < min_score_adj) {
 			task_unlock(p);
