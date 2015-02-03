@@ -304,8 +304,7 @@ static int cpufreq_exit(struct cpufreq_policy *policy)
 {
 	struct private_data *priv = policy->driver_data;
 
-	if (priv->cdev)
-		cpufreq_cooling_unregister(priv->cdev);
+	cpufreq_cooling_unregister(priv->cdev);
 	dev_pm_opp_free_cpufreq_table(priv->cpu_dev, &policy->freq_table);
 	clk_put(policy->clk);
 	if (!IS_ERR(priv->cpu_reg))
