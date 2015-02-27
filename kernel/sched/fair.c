@@ -5054,6 +5054,10 @@ static unsigned long target_load(int cpu, int type)
 	return max(rq->cpu_load[type-1], total);
 }
 
+static unsigned long capacity_orig_of(int cpu)
+{
+	return cpu_rq(cpu)->cpu_capacity_orig;
+}
 
 static unsigned long cpu_avg_load_per_task(int cpu)
 {
@@ -7956,6 +7960,7 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	raw_spin_lock_irqsave(&mcc->lock, flags);
 	max_capacity = mcc->val;
 	max_cap_cpu = mcc->cpu;
+	cpu_rq(cpu)->cpu_capacity_orig = capacity;
 
 	if ((max_capacity > capacity && max_cap_cpu == cpu) ||
 	    (max_capacity < capacity)) {
@@ -8024,6 +8029,7 @@ void update_group_capacity(struct sched_domain *sd, int cpu)
 			 * causing divide-by-zero issues on boot.
 			 */
 			if (unlikely(!rq->sd)) {
+				capacity_orig += capacity_orig_of(cpu);
 				capacity += capacity_of(cpu);
 			} else {
 				sgc = rq->sd->groups->sgc;
