@@ -3211,6 +3211,10 @@ static inline void update_load_avg(struct sched_entity *se, int flags)
  */
 static void attach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
+	if (!sched_feat(ATTACH_AGE_LOAD))
+		goto skip_aging;
+
+skip_aging:
 	se->avg.last_update_time = cfs_rq->avg.last_update_time;
 	cfs_rq->avg.load_avg += se->avg.load_avg;
 	cfs_rq->avg.load_sum += se->avg.load_sum;
