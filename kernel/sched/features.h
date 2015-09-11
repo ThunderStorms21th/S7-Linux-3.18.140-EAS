@@ -73,6 +73,9 @@ SCHED_FEAT(FORCE_SD_OVERLAP, false)
 SCHED_FEAT(RT_RUNTIME_SHARE, true)
 SCHED_FEAT(LB_MIN, false)
 
+/*
+ * Apply ATTACH Age Load
+ */
 SCHED_FEAT(ATTACH_AGE_LOAD, true)
 
 /*
