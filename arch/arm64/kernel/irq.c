@@ -28,6 +28,7 @@
 #include <linux/irqchip.h>
 #include <linux/seq_file.h>
 #include <linux/ratelimit.h>
+#include <linux/cpumask.h>
 
 unsigned long irq_err_count;
 
@@ -117,3 +118,4 @@ void migrate_irqs(void)
 	local_irq_restore(flags);
 }
 #endif /* CONFIG_HOTPLUG_CPU */
+
