@@ -1860,9 +1860,12 @@ ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 #ifdef CONFIG_SMP
 	if (p->sched_class->task_woken) {
 		/*
-		 * XXX can drop rq->lock; most likely ok.
+		 * Nothing relies on rq->lock after this, so its fine to
+		 * drop it.
 		 */
+		lockdep_unpin_lock(&rq->lock);
 		p->sched_class->task_woken(rq, p);
+		lockdep_pin_lock(&rq->lock);
 	}
 
 	if (rq->idle_stamp) {
