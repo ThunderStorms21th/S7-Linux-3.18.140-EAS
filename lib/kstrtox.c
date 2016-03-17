@@ -346,20 +346,6 @@ int kstrtobool(const char *s, bool *res)
 	case '0':
 		*res = false;
 		return 0;
-	case 'o':
-	case 'O':
-		switch (s[1]) {
-		case 'n':
-		case 'N':
-			*res = true;
-			return 0;
-		case 'f':
-		case 'F':
-			*res = false;
-			return 0;
-		default:
-			break;
-		}
 	default:
 		break;
 	}
