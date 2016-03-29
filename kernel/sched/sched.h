@@ -1358,6 +1358,9 @@ extern void update_idle_cpu_load(struct rq *this_rq);
 
 extern void init_task_runnable_average(struct task_struct *p);
 
+extern void init_entity_runnable_average(struct sched_entity *se);
+extern void post_init_entity_util_avg(struct sched_entity *se);
+
 static inline void add_nr_running(struct rq *rq, unsigned count)
 {
 	unsigned prev_nr = rq->nr_running;

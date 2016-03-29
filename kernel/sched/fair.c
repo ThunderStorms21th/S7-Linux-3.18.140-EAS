@@ -705,6 +705,14 @@ static unsigned long task_h_load(struct task_struct *p);
 static inline void __update_task_entity_contrib(struct sched_entity *se);
 static inline void __update_task_entity_utilization(struct sched_entity *se);
 
+/*
+ * We choose a half-life close to 1 scheduling period.
+ * Note: The tables below are dependent on this value.
+ */
+#define LOAD_AVG_PERIOD 32
+#define LOAD_AVG_MAX 47742 /* maximum possible load avg */
+#define LOAD_AVG_MAX_N 345 /* number of full periods to produce LOAD_MAX_AVG */
+
 /* Give new task start runnable values to heavy its load in infant time */
 void init_task_runnable_average(struct task_struct *p)
 {
@@ -716,8 +724,81 @@ void init_task_runnable_average(struct task_struct *p)
 	__update_task_entity_contrib(&p->se);
 	__update_task_entity_utilization(&p->se);
 }
+
+/* Give new sched_entity start runnable values to heavy its load in infant time */
+void init_entity_runnable_average(struct sched_entity *se)
+{
+	struct sched_avg *sa = &se->avg;
+	sa->last_update_time = 0;
+	/*
+	 * sched_avg's period_contrib should be strictly less then 1024, so
+	 * we give it 1023 to make sure it is almost a period (1024us), and
+	 * will definitely be update (after enqueue).
+	 */
+	sa->period_contrib = 1023;
+	sa->load_avg = scale_load_down(se->load.weight);
+	sa->load_sum = sa->load_avg * LOAD_AVG_MAX;
+
+	/*
+	 * At this point, util_avg won't be used in select_task_rq_fair anyway
+	 */
+	sa->util_avg = 0;
+	sa->util_sum = 0;
+	/* when this task enqueue'ed, it will contribute to its cfs_rq's load_avg */
+}
+
+/*
+ * With new tasks being created, their initial util_avgs are extrapolated
+ * based on the cfs_rq's current util_avg:
+ *
+ *   util_avg = cfs_rq->util_avg / (cfs_rq->load_avg + 1) * se.load.weight
+ *
+ * However, in many cases, the above util_avg does not give a desired
+ * value. Moreover, the sum of the util_avgs may be divergent, such
+ * as when the series is a harmonic series.
+ *
+ * To solve this problem, we also cap the util_avg of successive tasks to
+ * only 1/2 of the left utilization budget:
+ *
+ *   util_avg_cap = (1024 - cfs_rq->avg.util_avg) / 2^n
+ *
+ * where n denotes the nth task.
+ *
+ * For example, a simplest series from the beginning would be like:
+ *
+ *  task  util_avg: 512, 256, 128,  64,  32,   16,    8, ...
+ * cfs_rq util_avg: 512, 768, 896, 960, 992, 1008, 1016, ...
+ *
+ * Finally, that extrapolated util_avg is clamped to the cap (util_avg_cap)
+ * if util_avg > util_avg_cap.
+ */
+void post_init_entity_util_avg(struct sched_entity *se)
+{
+	struct cfs_rq *cfs_rq = cfs_rq_of(se);
+	struct sched_avg *sa = &se->avg;
+	long cap = (long)(scale_load_down(SCHED_LOAD_SCALE) - cfs_rq->avg.util_avg) / 2;
+
+	if (cap > 0) {
+		if (cfs_rq->avg.util_avg != 0) {
+			sa->util_avg  = cfs_rq->avg.util_avg * se->load.weight;
+			sa->util_avg /= (cfs_rq->avg.load_avg + 1);
+
+			if (sa->util_avg > cap)
+				sa->util_avg = cap;
+		} else {
+			sa->util_avg = cap;
+		}
+		sa->util_sum = sa->util_avg * LOAD_AVG_MAX;
+	}
+}
 #else
+void init_entity_runnable_average(struct sched_entity *se)
+{
+}
 void init_task_runnable_average(struct task_struct *p)
+{
+}
+void post_init_entity_util_avg(struct sched_entity *se)
 {
 }
 #endif
