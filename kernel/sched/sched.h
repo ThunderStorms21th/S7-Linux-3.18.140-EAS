@@ -539,6 +539,7 @@ struct root_domain {
 };
 
 extern struct root_domain def_root_domain;
+extern struct target_nrg schedtune_target_nrg;
 
 #endif /* CONFIG_SMP */
 

@@ -5512,6 +5512,7 @@ static int energy_diff(struct energy_env *eenv)
 	struct sched_group *sg;
 	int sd_cpu = -1, energy_before = 0, energy_after = 0;
 	int result;
+	int diff, margin;
 
 	struct energy_env eenv_before = {
 		.usage_delta	= 0,
@@ -5567,8 +5568,51 @@ static int energy_diff(struct energy_env *eenv)
 			eenv->cap.before, eenv->cap.after, eenv->cap.delta,
 			eenv->nrg.delta, eenv->energy_payoff);
 
-	return result;
+	/*
+	 * Dead-zone margin preventing too many migrations.
+	 */
+
+	margin = eenv->nrg.before >> 6; /* ~1.56% */
+
+	diff = eenv->nrg.after - eenv->nrg.before;
+
+	eenv->nrg.diff = (abs(diff) < margin) ? 0 : eenv->nrg.diff;
+
+	return eenv->nrg.diff;
 }
+
+#ifdef CONFIG_SCHED_TUNE
+/*
+ * System energy normalization
+ * Returns the normalized value, in the range [0..SCHED_LOAD_SCALE],
+ * corresponding to the specified energy variation.
+ */
+static inline int
+normalize_energy(int energy_diff)
+{
+	u32 normalized_nrg;
+#ifdef CONFIG_SCHED_DEBUG
+	int max_delta;
+
+	/* Check for boundaries */
+	max_delta  = schedtune_target_nrg.max_power;
+	max_delta -= schedtune_target_nrg.min_power;
+	WARN_ON(abs(energy_diff) >= max_delta);
+#endif
+
+	/* Do scaling using positive numbers to increase the range */
+	normalized_nrg = (energy_diff < 0) ? -energy_diff : energy_diff;
+
+	/* Scale by energy magnitude */
+	normalized_nrg <<= SCHED_LOAD_SHIFT;
+
+	/* Normalize on max energy for target platform */
+	normalized_nrg = reciprocal_divide(
+			normalized_nrg, schedtune_target_nrg.rdiv);
+
+	return (energy_diff < 0) ? -normalized_nrg : normalized_nrg;
+}
+#endif /* CONFIG_SCHED_TUNE */
 
 static int wake_wide(struct task_struct *p)
 {

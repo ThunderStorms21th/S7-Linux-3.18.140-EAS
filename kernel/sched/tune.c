@@ -17,8 +17,6 @@ static bool schedtune_initialized = false;
 
 int sysctl_sched_cfs_boost __read_mostly;
 
-extern struct target_nrg schedtune_target_nrg;
-
 /* Performance Boost region (B) threshold params */
 static int perf_boost_idx;
 
