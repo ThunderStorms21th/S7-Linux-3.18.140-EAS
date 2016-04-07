@@ -78,6 +78,13 @@ static int __cpufreq_governor(struct cpufreq_policy *policy,
 		unsigned int event);
 static unsigned int __cpufreq_get(unsigned int cpu);
 static void handle_update(struct work_struct *work);
+// static unsigned int __cpufreq_get(struct cpufreq_policy *policy);
+static int cpufreq_start_governor(struct cpufreq_policy *policy);
+
+static inline int cpufreq_exit_governor(struct cpufreq_policy *policy)
+{
+	return cpufreq_governor(policy, CPUFREQ_GOV_POLICY_EXIT);
+}
 
 /**
  * Two notifier lists: the "policy" list is involved in the
@@ -490,6 +497,13 @@ void cpufreq_freq_transition_end(struct cpufreq_policy *policy,
 }
 EXPORT_SYMBOL_GPL(cpufreq_freq_transition_end);
 
+/*
+ * Fast frequency switching status count.  Positive means "enabled", negative
+ * means "disabled" and 0 means "not decided yet".
+ */
+static int cpufreq_fast_switch_count;
+static DEFINE_MUTEX(cpufreq_fast_switch_lock);
+
 /**
  * cpufreq_driver_resolve_freq - Map a target frequency to a driver-supported
  * one.
@@ -522,6 +536,22 @@ unsigned int cpufreq_driver_resolve_freq(struct cpufreq_policy *policy,
 	return target_freq;
 }
 EXPORT_SYMBOL_GPL(cpufreq_driver_resolve_freq);
+
+/**
+ * cpufreq_disable_fast_switch - Disable fast frequency switching for policy.
+ * @policy: cpufreq policy to disable fast frequency switching for.
+ */
+void cpufreq_disable_fast_switch(struct cpufreq_policy *policy)
+{
+	mutex_lock(&cpufreq_fast_switch_lock);
+	if (policy->fast_switch_enabled) {
+		policy->fast_switch_enabled = false;
+		if (!WARN_ON(cpufreq_fast_switch_count <= 0))
+			cpufreq_fast_switch_count--;
+	}
+	mutex_unlock(&cpufreq_fast_switch_lock);
+}
+EXPORT_SYMBOL_GPL(cpufreq_disable_fast_switch);
 
 /*********************************************************************
  *                          SYSFS INTERFACE                          *
@@ -2337,6 +2367,17 @@ static int __cpufreq_governor(struct cpufreq_policy *policy,
 		module_put(policy->governor->owner);
 
 	return ret;
+}
+
+static int cpufreq_start_governor(struct cpufreq_policy *policy)
+{
+	int ret;
+
+	if (cpufreq_driver->get && !cpufreq_driver->setpolicy)
+		cpufreq_update_current_freq(policy);
+
+	ret = cpufreq_governor(policy, CPUFREQ_GOV_START);
+	return ret ? ret : cpufreq_governor(policy, CPUFREQ_GOV_LIMITS);
 }
 
 int cpufreq_register_governor(struct cpufreq_governor *governor)
