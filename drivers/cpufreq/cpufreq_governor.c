@@ -431,6 +431,7 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		gov_cancel_work(dbs_data, policy);
 
 		mutex_lock(&dbs_data->mutex);
+		cpufreq_policy_apply_limits(policy);
 		mutex_destroy(&cpu_cdbs->timer_mutex);
 		cpu_cdbs->cur_policy = NULL;
 
