@@ -1267,7 +1267,7 @@ static cpumask_var_t cpu_stat_off;
 
 static void vmstat_update(struct work_struct *w)
 {
-	if (refresh_cpu_vm_stats(true)) {
+	if (refresh_cpu_vm_stats(true) && !cpu_isolated(smp_processor_id())) {
 		/*
 		 * Counters were updated so we expect more updates
 		 * to occur in the future. Keep on running the
@@ -1278,7 +1278,8 @@ static void vmstat_update(struct work_struct *w)
 	} else {
 		/*
 		 * We did not update any counters so the app may be in
-		 * a mode where it does not cause counter updates.
+		 * a mode where it does not cause counter updates or the cpu
+		 * was isolated.
 		 * We may be uselessly running vmstat_update.
 		 * Defer the checking for differentials to the
 		 * shepherd thread on a different processor.
@@ -1345,7 +1346,7 @@ static void vmstat_shepherd(struct work_struct *w)
 	get_online_cpus();
 	/* Check processors whose vmstat worker threads have been disabled */
 	for_each_cpu(cpu, cpu_stat_off)
-		if (need_update(cpu) &&
+		if (!cpu_isolated(cpu) && need_update(cpu) &&
 			cpumask_test_and_clear_cpu(cpu, cpu_stat_off))
 
 			schedule_delayed_work_on(cpu,
