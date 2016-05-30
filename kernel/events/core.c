@@ -3234,7 +3234,8 @@ static u64 perf_event_read(struct perf_event *event)
 	 * If event is enabled and currently active on a CPU, update the
 	 * value in the event structure:
 	 */
-	if (event->state == PERF_EVENT_STATE_ACTIVE) {
+	if (event->state == PERF_EVENT_STATE_ACTIVE &&
+						!cpu_isolated(event->oncpu)) {
 		smp_call_function_single(event->oncpu,
 					 __perf_event_read, event, 1);
 	} else if (event->state == PERF_EVENT_STATE_INACTIVE) {
