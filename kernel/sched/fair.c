@@ -4640,6 +4640,10 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			cpufreq_sched_set_cap(cpu_of(rq), req_cap);
 		}
 	}
+
+	/* Update SchedTune accouting */
+	schedtune_enqueue_task(p, cpu_of(rq));
+
 	hrtick_update(rq);
 }
 
@@ -4733,6 +4737,10 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			}
 		}
 	}
+
+	/* Update SchedTune accouting */
+	schedtune_dequeue_task(p, cpu_of(rq));
+
 	hrtick_update(rq);
 }
 
