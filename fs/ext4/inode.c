@@ -3612,7 +3612,36 @@ int ext4_can_truncate(struct inode *inode)
 }
 
 /*
- * ext4_punch_hole: punches a hole in a file by releaseing the blocks
+ * We have to make sure i_disksize gets properly updated before we truncate
+ * page cache due to hole punching or zero range. Otherwise i_disksize update
+ * can get lost as it may have been postponed to submission of writeback but
+ * that will never happen after we truncate page cache.
+ */
+int ext4_update_disksize_before_punch(struct inode *inode, loff_t offset,
+				      loff_t len)
+{
+	handle_t *handle;
+	loff_t size = i_size_read(inode);
+
+	WARN_ON(!mutex_is_locked(&inode->i_mutex));
+	if (offset > size || offset + len < size)
+		return 0;
+
+	if (EXT4_I(inode)->i_disksize >= size)
+		return 0;
+
+	handle = ext4_journal_start(inode, EXT4_HT_MISC, 1);
+	if (IS_ERR(handle))
+		return PTR_ERR(handle);
+	ext4_update_i_disksize(inode, size);
+	ext4_mark_inode_dirty(handle, inode);
+	ext4_journal_stop(handle);
+
+	return 0;
+}
+
+/*
+ * ext4_punch_hole: punches a hole in a file by releasing the blocks
  * associated with the given offset and length
  *
  * @inode:  File inode
@@ -3642,7 +3671,7 @@ int ext4_punch_hole(struct inode *inode, loff_t offset, loff_t length)
 	 * Write out all dirty pages to avoid race conditions
 	 * Then release them.
 	 */
-	if (mapping->nrpages && mapping_tagged(mapping, PAGECACHE_TAG_DIRTY)) {
+	if (mapping_tagged(mapping, PAGECACHE_TAG_DIRTY)) {
 		ret = filemap_write_and_wait_range(mapping, offset,
 						   offset + length - 1);
 		if (ret)
