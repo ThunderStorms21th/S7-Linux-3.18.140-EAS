@@ -5821,6 +5821,8 @@ static inline unsigned long task_utilization(struct task_struct *p)
 
 #ifdef CONFIG_SCHED_TUNE
 
+struct reciprocal_value schedtune_spc_rdiv;
+
 static unsigned long
 schedtune_margin(unsigned long signal, unsigned long boost)
 {
@@ -5834,26 +5836,18 @@ schedtune_margin(unsigned long signal, unsigned long boost)
 	 *   M = B * (1024-S)
 	 * The obtained M could be used by the caller to "boost" S.
 	 */
-	margin  = SCHED_LOAD_SCALE - signal;
-	margin *= boost;
+	if (boost >= 0) {
+	    margin  = SCHED_CAPACITY_SCALE - signal;
+	    margin *= boost;
+    } else
+		margin = -signal * boost;
 
-	/*
-	 * Fast integer division by constant:
-	 *  Constant   :                 (C) = 100
-	 *  Precision  : 0.1%            (P) = 0.1
-	 *  Reference  : C * 100 / P     (R) = 100000
-	 *
-	 * Thus:
-	 *  Shift bifs : ceil(log(R,2))  (S) = 17
-	 *  Mult const : round(2^S/C)    (M) = 1311
-	 *
-	 *
-	 * */
-	margin  *= 1311;
-	margin >>= 17;
+	margin  = reciprocal_divide(margin, schedtune_spc_rdiv);
+
+	if (boost < 0)
+		margin *= -1;
 
 	return margin;
-
 }
 
 static unsigned long
