@@ -6198,6 +6198,7 @@ build_overlap_sched_groups(struct sched_domain *sd, int cpu)
 		 */
 		sg->sgc->capacity = SCHED_CAPACITY_SCALE * cpumask_weight(sg_span);
 		sg->sgc->max_capacity = SCHED_CAPACITY_SCALE;
+		sg->sgc->min_capacity = SCHED_CAPACITY_SCALE;
 
 		sg->sge = *per_cpu_ptr(sdd->sge, i);
 
