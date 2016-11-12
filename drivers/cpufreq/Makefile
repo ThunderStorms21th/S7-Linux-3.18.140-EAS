@@ -1,5 +1,5 @@
 # CPUfreq core
-obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o freq_table.o cpu_load_metric.o
+obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o freq_table.o cpu_load_metric.o cpufreq_governor_attr_set.o
 obj-$(CONFIG_PM_OPP)			+= cpufreq_opp.o
 
 # CPUfreq stats
