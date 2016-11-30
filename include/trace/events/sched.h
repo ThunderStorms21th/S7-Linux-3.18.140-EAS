@@ -1193,6 +1193,7 @@ TRACE_EVENT(walt_update_task_ravg,
 		__array(	char,	comm,   TASK_COMM_LEN	)
 		__field(	pid_t,	pid			)
 		__field(	pid_t,	cur_pid			)
+		__field(unsigned int,	cur_freq		)
 		__field(	u64,	wallclock		)
 		__field(	u64,	mark_start		)
 		__field(	u64,	delta_m			)
@@ -1219,6 +1220,7 @@ TRACE_EVENT(walt_update_task_ravg,
 		__entry->cpu            = rq->cpu;
 		__entry->cur_pid        = rq->curr->pid;
 		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->cur_freq       = rq->cur_freq;
 		__entry->pid            = p->pid;
 		__entry->mark_start     = p->ravg.mark_start;
 		__entry->delta_m        = (wallclock - p->ravg.mark_start);
@@ -1234,7 +1236,7 @@ TRACE_EVENT(walt_update_task_ravg,
 		__entry->active_windows	= p->ravg.active_windows;
 	),
 
-	TP_printk("wc %llu ws %llu delta %llu event %d cpu %d cur_pid %d task %d (%s) ms %llu delta %llu demand %u sum %u irqtime %llu"
+	TP_printk("wc %llu ws %llu delta %llu event %d cpu %d cur_freq %u cur_pid %d task %d (%s) ms %llu delta %llu demand %u sum %u irqtime %llu"
 		" cs %llu ps %llu util %lu cur_window %u prev_window %u active_wins %u"
 		, __entry->wallclock, __entry->win_start, __entry->delta,
 		__entry->evt, __entry->cpu, __entry->cur_pid,
