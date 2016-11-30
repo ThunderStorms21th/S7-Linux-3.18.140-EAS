@@ -20,6 +20,8 @@
 #include <linux/of.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
+#include <linux/sched.h>
+#include <linux/sched_energy.h>
 
 #include <asm/cputype.h>
 #include <asm/topology.h>
@@ -356,6 +358,53 @@ static void update_cpu_power(unsigned int cpu)
 		cpu, arch_scale_freq_power(NULL, cpu));
 }
 
+#ifdef CONFIG_DISABLE_CPU_SCHED_DOMAIN_BALANCE
+
+int cpu_cpu_flags(void)
+{
+	return SD_NO_LOAD_BALANCE;
+}
+
+#else
+
+static int cpu_cpu_flags(void)
+{
+	return SD_ASYM_CPUCAPACITY;
+}
+#endif /* CONFIG_DISABLE_CPU_SCHED_DOMAIN_BALANCE */
+
+static inline int cpu_corepower_flags(void)
+{
+	return SD_SHARE_PKG_RESOURCES  | SD_SHARE_POWERDOMAIN | \
+	       SD_SHARE_CAP_STATES;
+}
+
+/* sd energy functions */
+static inline const struct sched_group_energy *cpu_cluster_energy(int cpu)
+{
+	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL1];
+
+	if (!sge) {
+		pr_warn("Invalid sched_group_energy for Cluster%d\n", cpu);
+		return NULL;
+	}
+
+	return sge;
+}
+
+static inline const struct sched_group_energy *cpu_core_energy(int cpu)
+{
+	return NULL;
+}
+
+static struct sched_domain_topology_level arm64_topology[] = {
+#ifdef CONFIG_SCHED_MC
+	{ cpu_coregroup_mask, cpu_corepower_flags, cpu_core_energy, SD_INIT_NAME(MC) },
+#endif
+	{ cpu_cpu_mask, cpu_cpu_flags, cpu_cluster_energy, SD_INIT_NAME(DIE) },
+	{ NULL, },
+};
+
 /*
  * Scheduler load-tracking scale-invariance
  *
@@ -528,14 +577,6 @@ void __init arch_get_hmp_domains(struct list_head *hmp_domains_list)
 	list_add(&domain->hmp_domains, hmp_domains_list);
 }
 #endif /* CONFIG_SCHED_HMP */
-
-#ifdef CONFIG_DISABLE_CPU_SCHED_DOMAIN_BALANCE
-
-int cpu_cpu_flags(void)
-{
-	return SD_NO_LOAD_BALANCE;
-}
-#endif /* CONFIG_DISABLE_CPU_SCHED_DOMAIN_BALANCE */
 
 /*
  * cluster_to_logical_mask - return cpu logical mask of CPUs in a cluster
