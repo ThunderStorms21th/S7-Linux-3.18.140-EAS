@@ -7341,9 +7341,8 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 		want_sibling = false;
 
 	if (sd_flag & SD_BALANCE_WAKE && want_sibling)
-		want_affine = (!wake_wide(p) && !wake_cap(p, cpu, prev_cpu)
-			       && cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
-			      || energy_aware();
+		want_affine = !wake_wide(p) && !wake_cap(p, cpu, prev_cpu)
+			      && cpumask_test_cpu(cpu, tsk_cpus_allowed(p));
 
 	rcu_read_lock();
 	for_each_domain(cpu, tmp) {
