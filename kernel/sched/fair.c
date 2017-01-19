@@ -4566,9 +4566,11 @@ unsigned int capacity_margin = 1280; /* ~20% margin */
 static bool cpu_overutilized(int cpu);
 static unsigned long get_cpu_usage(int cpu);
 static inline unsigned long get_boosted_cpu_usage(int cpu);
+unsigned long boosted_cpu_util(int cpu);
 #else /* !CONFIG_SMP */
 static unsigned long get_cpu_usage(int cpu) { return 0UL; }
 static inline unsigned long get_boosted_cpu_usage(int cpu) { return 0UL; }
+#define boosted_cpu_util(cpu) cpu_util(cpu)
 #endif /* CONFIG_SMP */
 struct static_key __sched_energy_freq __read_mostly = STATIC_KEY_INIT_FALSE;
 
@@ -5715,6 +5717,15 @@ schedtune_cpu_margin(int cpu, unsigned long usage)
 }
 
 #endif /* CONFIG_SCHED_TUNE */
+
+unsigned long
+boosted_cpu_util(int cpu)
+{
+	unsigned long util = cpu_util(cpu);
+	long margin = schedtune_cpu_margin(util, cpu);
+	trace_sched_boost_cpu(cpu, util, margin);
+	return util + margin;
+}
 
 static inline unsigned long
 get_boosted_cpu_usage(int cpu)
