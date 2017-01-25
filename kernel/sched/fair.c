@@ -5817,6 +5817,8 @@ static inline unsigned long task_util(struct task_struct *p)
 	return p->se.avg.util_avg;
 }
 
+static inline unsigned long boosted_task_util(struct task_struct *task);
+
 static inline bool __task_fits(struct task_struct *p, int cpu, int usage)
 {
 	unsigned long capacity = capacity_of(cpu);
@@ -5843,6 +5845,109 @@ static inline bool task_fits_capacity(struct task_struct *p, int cpu)
 static inline bool task_fits_cpu(struct task_struct *p, int cpu)
 {
 	return __task_fits(p, cpu, get_cpu_usage(cpu));
+}
+
+static inline int find_best_target(struct task_struct *p, bool boosted, bool prefer_idle)
+{
+	int iter_cpu;
+	int target_cpu = -1;
+	int target_util = 0;
+	int backup_capacity = 0;
+	int best_idle_cpu = -1;
+	int best_idle_cstate = INT_MAX;
+	int backup_cpu = -1;
+	unsigned long task_util_boosted, new_util;
+
+	task_util_boosted = boosted_task_util(p);
+	for (iter_cpu = 0; iter_cpu < NR_CPUS; iter_cpu++) {
+		int cur_capacity;
+		struct rq *rq;
+		int idle_idx;
+
+		/*
+		 * Iterate from higher cpus for boosted tasks.
+		 */
+		int i = boosted ? NR_CPUS-iter_cpu-1 : iter_cpu;
+
+		if (!cpu_online(i) || !cpumask_test_cpu(i, tsk_cpus_allowed(p)))
+			continue;
+
+		/*
+		 * p's blocked utilization is still accounted for on prev_cpu
+		 * so prev_cpu will receive a negative bias due to the double
+		 * accounting. However, the blocked utilization may be zero.
+		 */
+		new_util = cpu_util(i) + task_util_boosted;
+
+		/*
+		 * Ensure minimum capacity to grant the required boost.
+		 * The target CPU can be already at a capacity level higher
+		 * than the one required to boost the task.
+		 */
+		if (new_util > capacity_orig_of(i))
+			continue;
+
+#ifdef CONFIG_SCHED_WALT
+		if (walt_cpu_high_irqload(i))
+			continue;
+#endif
+		/*
+		 * Unconditionally favoring tasks that prefer idle cpus to
+		 * improve latency.
+		 */
+		if (idle_cpu(i) && prefer_idle) {
+			if (best_idle_cpu < 0)
+				best_idle_cpu = i;
+			continue;
+		}
+
+		cur_capacity = capacity_curr_of(i);
+		rq = cpu_rq(i);
+		idle_idx = idle_get_state_idx(rq);
+
+		if (new_util < cur_capacity) {
+			if (cpu_rq(i)->nr_running) {
+				if (prefer_idle) {
+					/* Find a target cpu with highest
+					 * utilization.
+					 */
+					if (target_util == 0 ||
+						target_util < new_util) {
+						target_cpu = i;
+						target_util = new_util;
+					}
+				} else {
+					/* Find a target cpu with lowest
+					 * utilization.
+					 */
+					if (target_util == 0 ||
+						target_util > new_util) {
+						target_cpu = i;
+						target_util = new_util;
+					}
+				}
+			} else if (!prefer_idle) {
+				if (best_idle_cpu < 0 ||
+					(sysctl_sched_cstate_aware &&
+						best_idle_cstate > idle_idx)) {
+					best_idle_cstate = idle_idx;
+					best_idle_cpu = i;
+				}
+			}
+		} else if (backup_capacity == 0 ||
+				backup_capacity > cur_capacity) {
+			// Find a backup cpu with least capacity.
+			backup_capacity = cur_capacity;
+			backup_cpu = i;
+		}
+	}
+
+	if (prefer_idle && best_idle_cpu >= 0)
+		target_cpu = best_idle_cpu;
+	else if (target_cpu < 0)
+		target_cpu = best_idle_cpu >= 0 ? best_idle_cpu : backup_cpu;
+
+	return target_cpu;
 }
 
 /*
@@ -5887,10 +5992,8 @@ static int wake_cap(struct task_struct *p, int cpu, int prev_cpu)
 
 static int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync)
 {
-	int i;
-	int min_diff = 0, energy_cpu = prev_cpu, spare_cpu = prev_cpu;
-	unsigned long max_spare = 0;
-	struct sched_domain *sd;
+	int target_cpu = prev_cpu, tmp_target;
+	bool boosted, prefer_idle;
 
 	if (sysctl_sched_sync_hint_enable && sync) {
 		int cpu = smp_processor_id();
@@ -5900,52 +6003,40 @@ static int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync
 			return cpu;
 	}
 
-	rcu_read_lock();
+#ifdef CONFIG_CGROUP_SCHEDTUNE
+	boosted = schedtune_task_boost(p) > 0;
+	prefer_idle = schedtune_prefer_idle(p) > 0;
+#else
+	boosted = get_sysctl_sched_cfs_boost() > 0;
+	prefer_idle = 0;
+#endif
 
-	sd = rcu_dereference(per_cpu(sd_ea, prev_cpu));
+	/* Find a cpu with sufficient capacity */
+	tmp_target = find_best_target(p, boosted, prefer_idle);
 
-	if (!sd)
-		goto unlock;
-
-	for_each_cpu_and(i, tsk_cpus_allowed(p), sched_domain_span(sd)) {
-		int diff;
-		unsigned long spare;
-
-		struct energy_env eenv = {
-			.util_delta	= task_util(p),
-			.src_cpu	= prev_cpu,
-			.dst_cpu	= i,
-			.task		= p,
-		};
-
-		spare = capacity_spare_wake(i, p);
-
-		if (i == prev_cpu)
-			continue;
-
-		if (spare > max_spare) {
-			max_spare = spare;
-			spare_cpu = i;
-		}
-
-		if (spare * 1024 < capacity_margin * task_util(p))
-			continue;
-
-		diff = energy_diff(&eenv);
-
-		if (diff < min_diff) {
-			min_diff = diff;
-			energy_cpu = i;
-		}
+	if (tmp_target >= 0) {
+		target_cpu = tmp_target;
+		if ((boosted || prefer_idle) && idle_cpu(target_cpu))
+			return target_cpu;
 	}
 
-unlock:
-	rcu_read_unlock();
+	if (target_cpu != prev_cpu) {
+		struct energy_env eenv = {
+			.util_delta     = task_util(p),
+			.src_cpu        = prev_cpu,
+			.dst_cpu        = target_cpu,
+			.task           = p,
+		};
 
-	if (energy_cpu == prev_cpu && !cpu_overutilized(prev_cpu))
-		return prev_cpu;
+		/* Not enough spare capacity on previous cpu */
+		if (cpu_overutilized(prev_cpu))
+			return target_cpu;
 
-	return energy_cpu != prev_cpu ? energy_cpu : spare_cpu;
+		if (energy_diff(&eenv) >= 0)
+			return prev_cpu;
+	}
+
+	return target_cpu;
 }
 
 #ifdef CONFIG_SCHED_TUNE
@@ -5984,6 +6075,17 @@ boosted_cpu_util(int cpu)
 	unsigned long util = cpu_util(cpu);
 	long margin = schedtune_cpu_margin(util, cpu);
 	trace_sched_boost_cpu(cpu, util, margin);
+	return util + margin;
+}
+
+static inline unsigned long
+boosted_task_util(struct task_struct *task)
+{
+	unsigned long util = task_util(task);
+	long margin = schedtune_task_margin(task);
+
+	trace_sched_boost_task(task, util, margin);
+
 	return util + margin;
 }
 
