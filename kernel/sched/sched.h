@@ -357,6 +357,7 @@ struct cfs_rq {
 	 * sched_entities associated with the rq.
 	 */
 	struct sched_avg avg;
+	u64 runnable_load_sum;
 	unsigned long runnable_load_avg, blocked_load_avg;
 	unsigned long utilization_load_avg, utilization_blocked_avg;
 	atomic64_t decay_counter;

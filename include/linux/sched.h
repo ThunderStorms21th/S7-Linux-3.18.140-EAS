@@ -1162,6 +1162,9 @@ struct load_weight {
 };
 
 struct sched_avg {
+    u64 last_update_time, load_sum;
+  	u64	runnable_load_sum;
+	u32 util_sum, period_contrib;
 	u64 last_runnable_update;
 	s64 decay_count;
 	/*
