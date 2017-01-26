@@ -5799,87 +5799,6 @@ static inline bool task_fits_cpu(struct task_struct *p, int cpu)
 	return __task_fits(p, cpu, get_cpu_usage(cpu));
 }
 
-static int energy_aware_wake_cpu(struct task_struct *p, int target)
-{
-	struct sched_domain *sd;
-	struct sched_group *sg, *sg_target;
-	int target_max_cap = INT_MAX;
-	int target_cpu = task_cpu(p);
-	int i;
-
-	sd = rcu_dereference(per_cpu(sd_ea, task_cpu(p)));
-
-	if (!sd)
-		return target;
-
-	sg = sd->groups;
-	sg_target = sg;
-
-	/*
-	 * Find group with sufficient capacity. We only get here if no cpu is
-	 * overutilized. We may end up overutilizing a cpu by adding the task,
-	 * but that should not be any worse than select_idle_sibling().
-	 * load_balance() should sort it out later as we get above the tipping
-	 * point.
-	 */
-	do {
-		/* Assuming all cpus are the same in group */
-		int max_cap_cpu = group_first_cpu(sg);
-
-		/*
-		 * Assume smaller max capacity means more energy-efficient.
-		 * Ideally we should query the energy model for the right
-		 * answer but it easily ends up in an exhaustive search.
-		 */
-		if (capacity_of(max_cap_cpu) < target_max_cap &&
-		    task_fits_capacity(p, max_cap_cpu)) {
-			sg_target = sg;
-			target_max_cap = capacity_of(max_cap_cpu);
-		}
-	} while (sg = sg->next, sg != sd->groups);
-
-	/* Find cpu with sufficient capacity */
-	for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg_target)) {
-		/*
-		 * p's blocked utilization is still accounted for on prev_cpu
-		 * so prev_cpu will receive a negative bias due the double
-		 * accouting. However, the blocked utilization may be zero.
-		 */
-		int new_usage = get_cpu_usage(i) + boosted_task_utilization(p);
-
-		if (new_usage >	capacity_orig_of(i))
-			continue;
-
-		if (new_usage <	capacity_curr_of(i)) {
-			target_cpu = i;
-			if (cpu_rq(i)->nr_running)
-				break;
-		}
-
-		/* cpu has capacity at higher OPP, keep it as fallback */
-		if (target_cpu == task_cpu(p))
-			target_cpu = i;
-	}
-
-	if (target_cpu != task_cpu(p)) {
-		struct energy_env eenv = {
-			.usage_delta	= task_utilization(p),
-			.src_cpu	= task_cpu(p),
-			.dst_cpu	= target_cpu,
-			.task		= p,
-		};
-
-		/* Not enough spare capacity on previous cpu */
-		if (cpu_overutilized(task_cpu(p)))
-			return target_cpu;
-
-		if (energy_diff(&eenv) >= 0)
-			return task_cpu(p);
-	}
-
-	return target_cpu;
-}
-
 /*
  * cpu_util_wake: Compute cpu utilization with any contributions from
  * the waking task p removed.
@@ -7366,13 +7285,9 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 	if (affine_sd && cpu != prev_cpu && wake_affine(affine_sd, p, prev_cpu, sync))
 		prev_cpu = cpu;
 
-	if (sd_flag & SD_BALANCE_WAKE && want_sibling) {
-		if (energy_aware() && !cpu_rq(cpu)->rd->overutilized)
-			new_cpu = energy_aware_wake_cpu(p, prev_cpu);
-		else
+		if (sd_flag & SD_BALANCE_WAKE) /* XXX always ? */
 			new_cpu = select_idle_sibling(p, prev_cpu, new_cpu);
 		goto unlock;
-	}
 
 	while (sd) {
 		struct sched_group *group;
