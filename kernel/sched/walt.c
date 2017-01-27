@@ -196,10 +196,8 @@ update_window_start(struct rq *rq, u64 wallclock)
 	delta = wallclock - rq->window_start;
 	/* If the MPM global timer is cleared, set delta as 0 to avoid kernel BUG happening */
 	if (delta < 0) {
-		if (arch_timer_read_counter() == 0)
-			delta = 0;
-		else
-			BUG_ON(1);
+		delta = 0;
+		WARN_ONCE(1, "WALT wallclock appears to have gone backwards or reset\n");
 	}
 
 	if (delta < walt_ravg_window)
