@@ -6373,6 +6373,9 @@ static inline int find_best_target(struct task_struct *p, bool boosted, bool pre
 	schedstat_inc(p, se.statistics.nr_wakeups_fbt_attempts);
 	schedstat_inc(this_rq(), eas_stats.fbt_attempts);
 
+	schedstat_inc(p, se.statistics.nr_wakeups_fbt_attempts);
+	schedstat_inc(this_rq(), eas_stats.fbt_attempts);
+
 	if (cpu < 0) {
 		schedstat_inc(p, se.statistics.nr_wakeups_fbt_no_cpu);
 		schedstat_inc(this_rq(), eas_stats.fbt_no_cpu);
@@ -6509,7 +6512,16 @@ static inline int find_best_target(struct task_struct *p, bool boosted, bool pre
 			if ((capacity_orig - min_capped_util) <
 				target_max_spare_cap)
 				continue;
+	if (target_cpu < 0)
+		target_cpu = best_idle_cpu >= 0 ? best_idle_cpu : backup_cpu;
 
+	if (target_cpu >= 0) {
+		schedstat_inc(p, se.statistics.nr_wakeups_fbt_count);
+		schedstat_inc(this_rq(), eas_stats.fbt_count);
+	}
+
+	return target_cpu;
+}
 			target_max_spare_cap = capacity_orig - min_capped_util;
 			target_capacity = capacity_orig;
 			target_cpu = i;
