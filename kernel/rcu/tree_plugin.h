@@ -397,11 +397,18 @@ void rcu_read_unlock_special(struct task_struct *t)
 			raw_spin_unlock_irqrestore(&rnp->lock, flags);
 		}
 
-#ifdef CONFIG_RCU_BOOST
-		/* Unboost if we were boosted. */
-		if (drop_boost_mutex) {
+		/*
+		 * Unboost if we were boosted.
+		 * Disable preemption to make sure completion is signalled
+		 * without having the task de-scheduled with its priority
+		 * lowered (in which case we're left with no boosted thread
+		 * and possible RCU starvation).
+		 */
+		if (IS_ENABLED(CONFIG_RCU_BOOST) && drop_boost_mutex) {
+			preempt_disable();
 			rt_mutex_unlock(&rnp->boost_mtx);
 			complete(&rnp->boost_completion);
+			preempt_enable();
 		}
 #endif /* #ifdef CONFIG_RCU_BOOST */
 
