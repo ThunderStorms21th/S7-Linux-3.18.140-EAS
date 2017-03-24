@@ -5582,6 +5582,12 @@ static int energy_diff_evaluate(struct energy_env *eenv)
 			eenv->cap.delta);
 #endif
 
+	trace_sched_energy_diff(eenv->task,
+			eenv->src_cpu, eenv->dst_cpu, eenv->util_delta,
+			eenv->nrg.before, eenv->nrg.after, eenv->nrg.diff,
+			eenv->cap.before, eenv->cap.after, eenv->cap.delta,
+			eenv->nrg.delta, eenv->payoff);
+
 	/*
 	 * When SchedTune is enabled, the energy_diff() function will return
 	 * the computed energy payoff value. Since the energy_diff() return
@@ -5659,12 +5665,14 @@ static int energy_diff(struct energy_env *eenv)
 	eenv->energy_payoff = 0;
 
 	result = energy_diff_evaluate(eenv);
+
+#ifndef CONFIG_SCHED_TUNE
 	trace_sched_energy_diff(eenv->task,
 			eenv->src_cpu, eenv->dst_cpu, eenv->usage_delta,
 			eenv->nrg.before, eenv->nrg.after, eenv->nrg.diff,
 			eenv->cap.before, eenv->cap.after, eenv->cap.delta,
 			eenv->nrg.delta, eenv->energy_payoff);
-
+#endif
 	/*
 	 * Dead-zone margin preventing too many migrations.
 	 */
