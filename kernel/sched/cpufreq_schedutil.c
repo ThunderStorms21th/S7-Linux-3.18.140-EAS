@@ -30,12 +30,14 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
 #define SUGOV_KTHREAD_PRIORITY	50
+#define CPUFREQ_TRANSITION_DELAY		500
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;
 	unsigned int up_rate_limit_us;
 	unsigned int down_rate_limit_us;
 	bool iowait_boost_enable;
+	unsigned int rate_limit_us;
 };
 
 struct sugov_policy {
@@ -760,6 +762,7 @@ static int sugov_init(struct cpufreq_policy *policy)
 {
 	struct sugov_policy *sg_policy;
 	struct sugov_tunables *tunables;
+	int rate_limit_us;
 	int ret = 0;
 
 	/* State should be equivalent to EXIT */
@@ -801,6 +804,19 @@ static int sugov_init(struct cpufreq_policy *policy)
 	tunables->iowait_boost_enable = policy->iowait_boost_enable;
 	
 	get_tunables_data(tunables, policy);
+
+	policy->transition_delay_us = CPUFREQ_TRANSITION_DELAY;
+
+	if (policy->transition_delay_us) {
+		rate_limit_us = policy->transition_delay_us;
+	} else {
+		unsigned int lat;
+
+		rate_limit_us = LATENCY_MULTIPLIER;
+		lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
+		if (lat)
+			tunables->rate_limit_us *= lat;
+	}
 
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;
