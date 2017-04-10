@@ -36,6 +36,8 @@
 #define BYT_VIDS		0x66b
 #define BYT_TURBO_RATIOS	0x66c
 #define BYT_TURBO_VIDS		0x66d
+#define INTEL_CPUFREQ_TRANSITION_LATENCY	20000
+#define INTEL_CPUFREQ_TRANSITION_DELAY		500
 
 #define FRAC_BITS 8
 #define int_tofp(X) ((int64_t)(X) << FRAC_BITS)
@@ -869,6 +871,141 @@ static struct cpufreq_driver intel_pstate_driver = {
 };
 
 static int __initdata no_load;
+
+static int intel_cpufreq_verify_policy(struct cpufreq_policy *policy)
+{
+	struct cpudata *cpu = all_cpu_data[policy->cpu];
+
+	update_turbo_state();
+	cpufreq_verify_within_limits(policy, policy->cpuinfo.min_freq,
+				     intel_pstate_get_max_freq(cpu));
+
+	intel_pstate_adjust_policy_max(policy, cpu);
+
+	intel_pstate_update_perf_limits(policy, cpu);
+
+	return 0;
+}
+
+static int intel_cpufreq_target(struct cpufreq_policy *policy,
+				unsigned int target_freq,
+				unsigned int relation)
+{
+	struct cpudata *cpu = all_cpu_data[policy->cpu];
+	struct cpufreq_freqs freqs;
+	int target_pstate;
+
+	update_turbo_state();
+
+	freqs.old = policy->cur;
+	freqs.new = target_freq;
+
+	cpufreq_freq_transition_begin(policy, &freqs);
+	switch (relation) {
+	case CPUFREQ_RELATION_L:
+		target_pstate = DIV_ROUND_UP(freqs.new, cpu->pstate.scaling);
+		break;
+	case CPUFREQ_RELATION_H:
+		target_pstate = freqs.new / cpu->pstate.scaling;
+		break;
+	default:
+		target_pstate = DIV_ROUND_CLOSEST(freqs.new, cpu->pstate.scaling);
+		break;
+	}
+	target_pstate = intel_pstate_prepare_request(cpu, target_pstate);
+	if (target_pstate != cpu->pstate.current_pstate) {
+		cpu->pstate.current_pstate = target_pstate;
+		wrmsrl_on_cpu(policy->cpu, MSR_IA32_PERF_CTL,
+			      pstate_funcs.get_val(cpu, target_pstate));
+	}
+	freqs.new = target_pstate * cpu->pstate.scaling;
+	cpufreq_freq_transition_end(policy, &freqs, false);
+
+	return 0;
+}
+
+static unsigned int intel_cpufreq_fast_switch(struct cpufreq_policy *policy,
+					      unsigned int target_freq)
+{
+	struct cpudata *cpu = all_cpu_data[policy->cpu];
+	int target_pstate;
+
+	update_turbo_state();
+
+	target_pstate = DIV_ROUND_UP(target_freq, cpu->pstate.scaling);
+	target_pstate = intel_pstate_prepare_request(cpu, target_pstate);
+	intel_pstate_update_pstate(cpu, target_pstate);
+	return target_pstate * cpu->pstate.scaling;
+}
+
+static int intel_cpufreq_cpu_init(struct cpufreq_policy *policy)
+{
+	int ret = __intel_pstate_cpu_init(policy);
+
+	if (ret)
+		return ret;
+
+	policy->cpuinfo.transition_latency = INTEL_CPUFREQ_TRANSITION_LATENCY;
+	policy->transition_delay_us = INTEL_CPUFREQ_TRANSITION_DELAY;
+	/* This reflects the intel_pstate_get_cpu_pstates() setting. */
+	policy->cur = policy->cpuinfo.min_freq;
+
+	return 0;
+}
+
+static struct cpufreq_driver intel_cpufreq = {
+	.flags		= CPUFREQ_CONST_LOOPS,
+	.verify		= intel_cpufreq_verify_policy,
+	.target		= intel_cpufreq_target,
+	.fast_switch	= intel_cpufreq_fast_switch,
+	.init		= intel_cpufreq_cpu_init,
+	.exit		= intel_pstate_cpu_exit,
+	.stop_cpu	= intel_cpufreq_stop_cpu,
+	.name		= "intel_cpufreq",
+};
+
+static struct cpufreq_driver *default_driver = &intel_pstate;
+
+static bool pid_in_use(void)
+{
+	return intel_pstate_driver == &intel_pstate &&
+		pstate_funcs.update_util == intel_pstate_update_util_pid;
+}
+
+static void intel_pstate_driver_cleanup(void)
+{
+	unsigned int cpu;
+
+	get_online_cpus();
+	for_each_online_cpu(cpu) {
+		if (all_cpu_data[cpu]) {
+			if (intel_pstate_driver == &intel_pstate)
+				intel_pstate_clear_update_util_hook(cpu);
+
+			kfree(all_cpu_data[cpu]);
+			all_cpu_data[cpu] = NULL;
+		}
+	}
+	put_online_cpus();
+	intel_pstate_driver = NULL;
+}
+
+static int intel_pstate_register_driver(struct cpufreq_driver *driver)
+{
+	int ret;
+
+	memset(&global, 0, sizeof(global));
+	global.max_perf_pct = 100;
+
+	intel_pstate_driver = driver;
+	ret = cpufreq_register_driver(intel_pstate_driver);
+	if (ret) {
+		intel_pstate_driver_cleanup();
+		return ret;
+	}
+
+	global.min_perf_pct = min_perf_pct_min();
+}
 
 static int intel_pstate_msrs_not_valid(void)
 {
