@@ -76,6 +76,20 @@ __read_mostly unsigned int walt_ravg_window = 20000000 / TICK_NSEC * TICK_NSEC;
 #define MIN_SCHED_RAVG_WINDOW (10000000 / TICK_NSEC * TICK_NSEC)
 #define MAX_SCHED_RAVG_WINDOW (1000000000 / TICK_NSEC * TICK_NSEC)
 
+/* Min window size (in ns) = 10ms */
+#ifdef CONFIG_HZ_300
+/*
+ * Tick interval becomes to 3333333 due to
+ * rounding error when HZ=300.
+ */
+#define MIN_SCHED_RAVG_WINDOW (3333333 * 6)
+#else
+#define MIN_SCHED_RAVG_WINDOW 10000000
+#endif
+
+/* Max window size (in ns) = 1s */
+#define MAX_SCHED_RAVG_WINDOW 1000000000
+
 static unsigned int sync_cpu;
 static ktime_t ktime_last;
 static bool walt_ktime_suspended;
