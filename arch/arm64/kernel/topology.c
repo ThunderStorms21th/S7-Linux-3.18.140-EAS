@@ -433,6 +433,11 @@ const struct cpumask *cpu_coregroup_mask(int cpu)
 	return &cpu_topology[cpu].core_sibling;
 }
 
+void update_cpu_power_capacity(int cpu)
+{
+	update_cpu_capacity(cpu);
+}
+
 static void update_siblings_masks(unsigned int cpuid)
 {
 	struct cpu_topology *cpu_topo, *cpuid_topo = &cpu_topology[cpuid];
@@ -626,7 +631,7 @@ void store_cpu_topology(unsigned int cpuid)
 
 	/* If the cpu topology has been already set, just return */
 	if (cpu_topo->core_id != -1)
-		return;
+            goto topology_populated;
 
 	mpidr = read_cpuid_mpidr();
 
@@ -665,6 +670,9 @@ void store_cpu_topology(unsigned int cpuid)
 		cpuid, cpu_topology[cpuid].thread_id,
 		cpu_topology[cpuid].core_id,
 		cpu_topology[cpuid].cluster_id, mpidr);
+
+topology_populated:
+	update_siblings_masks(cpuid);
 }
 
 
