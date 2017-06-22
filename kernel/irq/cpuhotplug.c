@@ -31,6 +31,7 @@ static bool migrate_one_irq(struct irq_desc *desc)
 
 	if (cpumask_any_and(affinity, cpu_online_mask) >= nr_cpu_ids) {
 		affinity = cpu_online_mask;
+
 		ret = true;
 	}
 
