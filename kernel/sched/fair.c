@@ -7726,6 +7726,9 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	capacity >>= SCHED_CAPACITY_SHIFT;
 	cpu_rq(cpu)->cpu_capacity_orig = capacity;
 
+	capacity *= arch_scale_max_freq_capacity(sd, cpu);
+	capacity >>= SCHED_CAPACITY_SHIFT;
+
 	mcc = &cpu_rq(cpu)->rd->max_cpu_capacity;
 
 	if (Larch_power)
