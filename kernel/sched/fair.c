@@ -3064,7 +3064,7 @@ static inline int propagate_entity_load_avg(struct sched_entity *se)
 }
 
 static inline void set_tg_cfs_propagate(struct cfs_rq *cfs_rq) {}
-#endif
+#endif /* CONFIG_FAIR_GROUP_SCHED */
 
 /*
  * Unsigned subtract and clamp on underflow.
@@ -4737,7 +4737,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	 * passed.
 	 */
 	if (p->in_iowait)
-		cpufreq_update_this_cpu(rq, SCHED_CPUFREQ_IOWAIT);
+		cpufreq_update_util(rq, SCHED_CPUFREQ_IOWAIT);
 
 	for_each_sched_entity(se) {
 		if (se->on_rq)
