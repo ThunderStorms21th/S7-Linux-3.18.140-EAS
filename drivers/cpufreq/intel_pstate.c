@@ -690,6 +690,13 @@ static inline void intel_pstate_adjust_busy_pstate(struct cpudata *cpu)
 	pid = &cpu->pid;
 	busy_scaled = intel_pstate_get_scaled_busy(cpu);
 
+	/* Don't allow remote callbacks */
+	if (smp_processor_id() != cpu->cpu)
+		return;
+
+	if ((s64)delta_ns < pid_params.sample_rate_ns)
+		return;
+
 	ctl = pid_calc(pid, busy_scaled);
 
 	/* Negative values of ctl increase the pstate and vice versa */
@@ -700,6 +707,33 @@ static void intel_pstate_timer_func(unsigned long __data)
 {
 	struct cpudata *cpu = (struct cpudata *) __data;
 	struct sample *sample;
+	struct cpudata *cpu = container_of(data, struct cpudata, update_util);
+	u64 delta_ns;
+
+	/* Don't allow remote callbacks */
+	if (smp_processor_id() != cpu->cpu)
+		return;
+
+	if (flags & SCHED_CPUFREQ_IOWAIT) {
+		cpu->iowait_boost = int_tofp(1);
+	} else if (cpu->iowait_boost) {
+		/* Clear iowait_boost if the CPU may have been idle. */
+		delta_ns = time - cpu->last_update;
+		if (delta_ns > TICK_NSEC)
+			cpu->iowait_boost = 0;
+	}
+	cpu->last_update = time;
+	delta_ns = time - cpu->sample.time;
+	if ((s64)delta_ns < INTEL_PSTATE_DEFAULT_SAMPLING_INTERVAL)
+		return;
+
+	if (intel_pstate_sample(cpu, time)) {
+		int target_pstate;
+
+		target_pstate = get_target_pstate_use_cpu_load(cpu);
+		intel_pstate_adjust_pstate(cpu, target_pstate);
+	}
+}
 
 	intel_pstate_sample(cpu);
 

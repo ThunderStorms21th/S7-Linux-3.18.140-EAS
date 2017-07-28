@@ -191,6 +191,9 @@ void gov_queue_work(struct dbs_data *dbs_data, struct cpufreq_policy *policy,
 	if (!policy->governor_enabled)
 		goto out_unlock;
 
+	if (!cpufreq_can_do_remote_dvfs(policy))
+		return;
+
 	if (!all_cpus) {
 		/*
 		 * Use raw_smp_processor_id() to avoid preemptible warnings.
