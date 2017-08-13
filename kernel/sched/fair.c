@@ -9874,6 +9874,9 @@ static inline bool nohz_kick_needed(struct rq *rq)
 	if (energy_aware())
 		return rq->misfit_task;
 
+	if (rq->nr_running >= 2)
+		return true;
+
 	rcu_read_lock();
 	sd = rcu_dereference(per_cpu(sd_busy, cpu));
 	if (sd) {
