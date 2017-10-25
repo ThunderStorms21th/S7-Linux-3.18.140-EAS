@@ -60,6 +60,11 @@
 #define _ZONE ZONE_NORMAL
 #endif
 
+/* to enable lowmemorykiller */
+static int enable_lmk = 1;
+module_param_named(enable_lmk, enable_lmk, int,
+	S_IRUGO | S_IWUSR);
+
 static uint32_t lowmem_debug_level = 1;
 static short lowmem_adj[6] = {
 	0,
@@ -97,7 +102,6 @@ static struct task_struct *pick_next_from_adj_tree(struct task_struct *task);
 static struct task_struct *pick_first_task(void);
 static struct task_struct *pick_last_task(void);
 #endif
-
 static atomic_t shift_adj = ATOMIC_INIT(0);
 static short adj_max_shift = 353;
 module_param_named(adj_max_shift, adj_max_shift, short,
@@ -279,6 +283,9 @@ static void show_memory(void)
 static unsigned long lowmem_count(struct shrinker *s,
 				  struct shrink_control *sc)
 {
+	if (!enable_lmk)
+		return 0;
+		
 	return global_page_state(NR_ACTIVE_ANON) +
 		global_page_state(NR_ACTIVE_FILE) +
 		global_page_state(NR_INACTIVE_ANON) +
