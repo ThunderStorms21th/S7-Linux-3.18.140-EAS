@@ -94,8 +94,7 @@ static DEFINE_PER_CPU(unsigned int, cpu_load);
 
 static struct timer_list load_timer;
 static bool load_timer_active;
-static bool soc_is_hmp;
-static unsigned int available_clusters = 0;
+static bool soc_is_hmp = true;
 
 /* configurable parameters */
 static unsigned int  balance_level = 60;
@@ -427,7 +426,6 @@ static CPU_SPEED_BALANCE balanced_speed_balance(void)
 
 	unsigned int avg_nr_run = get_nr_run_avg();
 	unsigned int nr_run;
-	bool done;
 
 	/* First use the up thresholds to see if we need to bring CPUs online. */
 	pr_debug("%s: Current core count max runqueue: %d\n", __func__,
@@ -448,7 +446,7 @@ static CPU_SPEED_BALANCE balanced_speed_balance(void)
 	 * down threshold comparison loop.
 	 */
 	for ( ; nr_run > 1; --nr_run) {
-		if (done || avg_nr_run >= nr_down_run_thresholds[nr_run - 1]) {
+		if (avg_nr_run >= nr_down_run_thresholds[nr_run - 1]) {
 			/* We have fewer things running than our down threshold.
 			   Use one less CPU. */
 			break;
@@ -855,7 +853,6 @@ static int rqbalance_get_package_info(void)
 			continue;
 
 		prev_cluster = cur_cluster;
-		available_clusters++;
 
 		/*
 		 * Get CPUFreq frequency table. RQBALANCE only works with
@@ -878,10 +875,6 @@ static int rqbalance_get_package_info(void)
 		idle_bottom_freq[cur_cluster] =
 				table[(count / 2) - 2].frequency;
 	};
-
-	/* TODO: Check if we are effectively using HMP!!! This is NOT OK!!! */
-	soc_is_hmp = (available_clusters > 1) ? true : false;
-	pr_info("rqbalance: running as %s\n", soc_is_hmp ? "hmp" : "smp");
 
 	return 0;
 }
