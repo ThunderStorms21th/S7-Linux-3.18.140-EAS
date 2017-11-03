@@ -934,6 +934,7 @@ static int sugov_start(struct cpufreq_policy *policy)
 		struct sugov_cpu *sg_cpu = &per_cpu(sugov_cpu, cpu);
 
 		memset(sg_cpu, 0, sizeof(*sg_cpu));
+		sg_cpu->cpu = cpu;
 		sg_cpu->sg_policy = sg_policy;
 		sg_cpu->flags = 0;
 		sugov_start_slack(cpu);
@@ -1253,10 +1254,5 @@ static int __init sugov_register(void)
 	sugov_exynos_init();
 
 	return cpufreq_register_governor(&cpufreq_gov_schedutil);
-
-	int cpu;
-
-	for_each_possible_cpu(cpu)
-		per_cpu(sugov_cpu, cpu).cpu = cpu;
 }
 fs_initcall(sugov_register);
