@@ -2479,6 +2479,7 @@ accumulate_sum(u64 delta, int cpu, struct sched_avg *sa,
 #ifdef CONFIG_FREQVAR_TUNE
 	scale_cpu = freqvar_boost_vector(cpu, sa->util_avg, cfs_rq);
 #else
+	scale_freq = arch_scale_freq_capacity(cpu);
 	scale_cpu = arch_scale_cpu_capacity(NULL, cpu);
 #endif
 
