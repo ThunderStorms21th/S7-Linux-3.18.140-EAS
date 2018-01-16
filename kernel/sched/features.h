@@ -149,3 +149,13 @@ SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
  */
 SCHED_FEAT(STUNE_BOOST_BIAS_BIG, true)
 
+/*
+ * Exynos HMP settings.
+ * Set it at true whene is set in defconfig or at false if not.
+ */
+#ifdef CONFIG_SCHED_EHMP
+SCHED_FEAT(EXYNOS_HMP, true)
+#else
+SCHED_FEAT(EXYNOS_HMP, false)
+#endif
+

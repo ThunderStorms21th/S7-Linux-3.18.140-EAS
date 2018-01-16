@@ -1383,8 +1383,19 @@ config DYNAMIC_STUNE_BOOST
 	help
 	  This option extends the SchedTune framework and provides APIs to
 	  activate and reset SchedTune boosting from anywhere in the kernel.
+	  
+  	  If unsure, say N.
 
-	  If unsure, say N.
+config SCHED_EHMP
+	bool "Exynos scheduler for Heterogeneous Multi-Processor"
+	depends on SMP
+	default n
+	help
+	  This option supports Exynos scheduler for HMP architecture. It is
+	  designed to secure the limits of energy aware scheduler. This option
+	  provides features such as independent boosting functinos such as
+	  global boost and on-time migration, and prefer_perf and enhanced
+	  prefer_idle that work in conjunction with SCHEDTUNE.
 
 config DEFAULT_USE_ENERGY_AWARE
 	bool "Default to enabling the Energy Aware Scheduler feature"
