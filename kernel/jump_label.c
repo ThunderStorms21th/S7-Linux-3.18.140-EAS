@@ -56,6 +56,66 @@ jump_label_sort_entries(struct jump_entry *start, struct jump_entry *stop)
 
 static void jump_label_update(struct static_key *key, int enable);
 
+/*
+ * There are similar definitions for the !HAVE_JUMP_LABEL case in jump_label.h.
+ * The use of 'atomic_read()' requires atomic.h and its problematic for some
+ * kernel headers such as kernel.h and others. Since static_key_count() is not
+ * used in the branch statements as it is for the !HAVE_JUMP_LABEL case its ok
+ * to have it be a function here. Similarly, for 'static_key_enable()' and
+ * 'static_key_disable()', which require bug.h. This should allow jump_label.h
+ * to be included from most/all places for HAVE_JUMP_LABEL.
+ */
+int static_key_count(struct static_key *key)
+{
+	/*
+	 * -1 means the first static_key_slow_inc() is in progress.
+	 *  static_key_enabled() must return true, so return 1 here.
+	 */
+	int n = atomic_read(&key->enabled);
+
+	return n >= 0 ? n : 1;
+}
+EXPORT_SYMBOL_GPL(static_key_count);
+
+void static_key_slow_inc_cpuslocked(struct static_key *key)
+{
+	int v, v1;
+
+	STATIC_KEY_CHECK_USE(key);
+
+	/*
+	 * Careful if we get concurrent static_key_slow_inc() calls;
+	 * later calls must wait for the first one to _finish_ the
+	 * jump_label_update() process.  At the same time, however,
+	 * the jump_label_update() call below wants to see
+	 * static_key_enabled(&key) for jumps to be updated properly.
+	 *
+	 * So give a special meaning to negative key->enabled: it sends
+	 * static_key_slow_inc() down the slow path, and it is non-zero
+	 * so it counts as "enabled" in jump_label_update().  Note that
+	 * atomic_inc_unless_negative() checks >= 0, so roll our own.
+	 */
+	for (v = atomic_read(&key->enabled); v > 0; v = v1) {
+		v1 = atomic_cmpxchg(&key->enabled, v, v + 1);
+		if (likely(v1 == v))
+			return;
+	}
+
+	jump_label_lock();
+	if (atomic_read(&key->enabled) == 0) {
+		atomic_set(&key->enabled, -1);
+		jump_label_update(key);
+		/*
+		 * Ensure that if the above cmpxchg loop observes our positive
+		 * value, it must also observe all the text changes.
+		 */
+		atomic_set_release(&key->enabled, 1);
+	} else {
+		atomic_inc(&key->enabled);
+	}
+	jump_label_unlock();
+}
+
 void static_key_slow_inc(struct static_key *key)
 {
 	STATIC_KEY_CHECK_USE();
@@ -95,6 +155,15 @@ static void __static_key_slow_dec(struct static_key *key,
 	jump_label_unlock();
 }
 
+static void __static_key_slow_dec(struct static_key *key,
+				  unsigned long rate_limit,
+				  struct delayed_work *work)
+{
+	cpus_read_lock();
+	__static_key_slow_dec_cpuslocked(key, rate_limit, work);
+	cpus_read_unlock();
+}
+
 static void jump_label_update_timeout(struct work_struct *work)
 {
 	struct static_key_deferred *key =
@@ -108,6 +177,12 @@ void static_key_slow_dec(struct static_key *key)
 	__static_key_slow_dec(key, 0, NULL);
 }
 EXPORT_SYMBOL_GPL(static_key_slow_dec);
+
+void static_key_slow_dec_cpuslocked(struct static_key *key)
+{
+	STATIC_KEY_CHECK_USE(key);
+	__static_key_slow_dec_cpuslocked(key, 0, NULL);
+}
 
 void static_key_slow_dec_deferred(struct static_key_deferred *key)
 {
