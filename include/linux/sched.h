@@ -809,7 +809,6 @@ static inline void signal_set_stop_flags(struct signal_struct *sig,
 	WARN_ON(sig->flags & (SIGNAL_GROUP_EXIT|SIGNAL_GROUP_COREDUMP));
 	sig->flags = (sig->flags & ~SIGNAL_STOP_MASK) | flags;
 }
-
 /* If true, all threads except ->group_exit_task have pending SIGKILL */
 static inline int signal_group_exit(const struct signal_struct *sig)
 {
@@ -1545,6 +1544,15 @@ struct task_struct {
 	unsigned int wakee_flips;
 	unsigned long wakee_flip_decay_ts;
 	struct task_struct *last_wakee;
+
+	/*
+	 * recent_used_cpu is initially set as the last CPU used by a task
+	 * that wakes affine another task. Waker/wakee relationships can
+	 * push tasks around a CPU where each wakeup moves to the next one.
+	 * Tracking a recently used CPU allows a quick search for a recently
+	 * used CPU that may be idle.
+	 */
+	int recent_used_cpu;
 
 	int wake_cpu;
 #endif
