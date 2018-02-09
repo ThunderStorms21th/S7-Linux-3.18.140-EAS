@@ -1367,6 +1367,15 @@ config SCHED_TUNE
 	  Only if you are testing a kernel with energy-aware scheduler support,
 	  you might want to say Y here.
 
+config DYNAMIC_STUNE_BOOST
+	bool "Dynamic SchedTune boosting support"
+	depends on SCHED_TUNE
+	help
+	  This option extends the SchedTune framework and provides APIs to
+	  activate and reset SchedTune boosting from anywhere in the kernel.
+
+	  If unsure, say N.
+
 config SYSFS_DEPRECATED
 	bool "Enable deprecated sysfs features to support old userspace tools"
 	depends on SYSFS
