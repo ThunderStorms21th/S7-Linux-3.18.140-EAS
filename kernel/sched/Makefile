@@ -32,4 +32,9 @@ obj-$(CONFIG_CPU_FREQ_GOV_PWRUTILX) += cpufreq_pwrutilx.o
 obj-$(CONFIG_FREQVAR_TUNE) += freqvar_tune.o
 obj-$(CONFIG_CPU_FREQ_GOV_BLU_SCHEDUTIL) += cpufreq_blu_schedutil.o
 obj-$(CONFIG_CPU_FREQ_GOV_ELECTROUTIL) += cpufreq_electroutil.o
+obj-$(CONFIG_CPU_FREQ_GOV_ALUCARDSCHED) += cpufreq_alucardsched.o
+obj-$(CONFIG_CPU_FREQ_GOV_DARKNESSSCHED) += cpufreq_darknesssched.o
+obj-$(CONFIG_CPU_FREQ_GOV_HELIX) += cpufreq_helix_schedutil.o
+obj-$(CONFIG_CPU_FREQ_GOV_ENERGY) += cpufreq_energy_dcfc.o
+
 
