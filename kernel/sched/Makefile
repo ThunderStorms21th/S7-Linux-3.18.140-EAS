@@ -40,3 +40,7 @@ obj-$(CONFIG_CPU_FREQ_GOV_BLU_BALLS) += cpufreq_blu_balls.o
 
 # Dynamic Energy Model
 obj-$(CONFIG_DYN_ENERGY_MODEL) += dyn_energy_model.o
+
+# sched_boost proc from HMP
+obj-y += boost.o
+
