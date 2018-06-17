@@ -43,3 +43,6 @@ obj-$(CONFIG_CPU_FREQ_GOV_PIXEL_SMURFUTIL) += cpufreq_pixel_smurfutil.o
 obj-$(CONFIG_CPU_FREQ_GOV_PIXEL_SCHEDUTIL) += cpufreq_pixel_schedutil.o
 obj-$(CONFIG_CPU_FREQ_GOV_BLU_BALLS) += cpufreq_blu_balls.o
 
+# sched_boost proc from HMP
+obj-y += boost.o
+
