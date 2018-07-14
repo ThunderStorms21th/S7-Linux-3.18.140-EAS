@@ -98,6 +98,7 @@ struct cpu_limits {
 	unsigned int main_cpu;
 	unsigned int freq_min;
 	unsigned int freq_max;
+	bool cpuhp_scheduled;
 };
 
 static DEFINE_PER_CPU(struct idle_info, idleinfo);
@@ -689,6 +690,20 @@ static struct notifier_block frequency_limits_nb = {
 	.notifier_call = frequency_limits_set,
 };
 
+static int cfl_hotplug_notify(unsigned int cpu)
+{
+	unsigned int cluster;
+
+	cluster = topology_physical_package_id(cpu);
+	if (!rqb_freq_limits[cluster].cpuhp_scheduled)
+		return 0;
+
+	rqb_freq_limits[cluster].cpuhp_scheduled = false;
+	cpufreq_update_policy(rqb_freq_limits[cluster].main_cpu);
+
+	return 0;
+}
+
 static ssize_t store_ulong_delay(struct cpuquiet_attribute *cattr, const char *buf,
 				size_t count)
 {
@@ -778,6 +793,24 @@ static ssize_t show_uint_array(struct cpuquiet_attribute *cattr,
 	return temp - buf;
 }
 
+static inline void __set_cluster_vote(unsigned int cluster)
+{
+	struct cpufreq_policy cfpol;
+
+	if (cpufreq_get_policy(&cfpol, rqb_freq_limits[cluster].main_cpu)) {
+		/* The cluster is down. Schedule for the next upcore event */
+		rqb_freq_limits[cluster].cpuhp_scheduled = true;
+
+		/* Make sure we upcore ASAP to set the limits */
+		cpuquiet_wake_cpu(rqb_freq_limits[cluster].main_cpu, false);
+	} else {
+		/* The cluster is available. Set limits right now! */
+		get_online_cpus();
+		cpufreq_update_policy(rqb_freq_limits[cluster].main_cpu);
+		put_online_cpus();
+	}
+}
+
 /*
  * Set a vote for MAX cluster frequency.
  * The function wants a string that contains "NCLUSTER FREQUENCY(KHz)".
@@ -794,13 +827,9 @@ static ssize_t show_uint_array(struct cpuquiet_attribute *cattr,
 static ssize_t set_cluster_vote_max(struct cpuquiet_attribute *cattr,
 					const char *buf, size_t count)
 {
-	struct cpufreq_policy cfpol;
 	unsigned int cluster, req_freq;
 
 	if (sscanf(buf, "%u %u", &cluster, &req_freq) != 2)
-		return -EINVAL;
-
-	if (cpufreq_get_policy(&cfpol, rqb_freq_limits[cluster].main_cpu))
 		return -EINVAL;
 
 	if (req_freq == 0)
@@ -808,9 +837,7 @@ static ssize_t set_cluster_vote_max(struct cpuquiet_attribute *cattr,
 
 	rqb_freq_limits[cluster].freq_max = req_freq;
 
-	get_online_cpus();
-	cpufreq_update_policy(rqb_freq_limits[cluster].main_cpu);
-	put_online_cpus();
+	__set_cluster_vote(cluster);
 
 	return count;
 }
@@ -818,20 +845,14 @@ static ssize_t set_cluster_vote_max(struct cpuquiet_attribute *cattr,
 static ssize_t set_cluster_vote_min(struct cpuquiet_attribute *cattr,
 					const char *buf, size_t count)
 {
-	struct cpufreq_policy cfpol;
 	unsigned int cluster, req_freq;
 
 	if (sscanf(buf, "%u %u", &cluster, &req_freq) != 2)
 		return -EINVAL;
 
-	if (cpufreq_get_policy(&cfpol, rqb_freq_limits[cluster].main_cpu))
-		return -EINVAL;
-
 	rqb_freq_limits[cluster].freq_min = req_freq;
 
-	get_online_cpus();
-	cpufreq_update_policy(rqb_freq_limits[cluster].main_cpu);
-	put_online_cpus();
+	__set_cluster_vote(cluster);
 
 	return count;
 }
@@ -1021,6 +1042,15 @@ static void rqbalance_stop(void)
 	rqbalance_sysfs_exit();
 }
 
+static int rqbalance_cfl_start(void)
+{
+	cpufreq_register_notifier(&frequency_limits_nb,
+		CPUFREQ_POLICY_NOTIFIER);
+	
+	return cpuhp_setup_state_nocalls(CPUHP_AP_ONLINE,
+		"rqbalance_cpuhp", cfl_hotplug_notify, NULL);
+}
+
 static int rqbalance_start(void)
 {
 	int err, i, max_cpu_id = 0;
@@ -1060,8 +1090,9 @@ static int rqbalance_start(void)
 	cpufreq_register_notifier(&balanced_cpufreq_nb,
 		CPUFREQ_TRANSITION_NOTIFIER);
 
-	cpufreq_register_notifier(&frequency_limits_nb,
-		CPUFREQ_POLICY_NOTIFIER);
+	err = rqbalance_cfl_start();
+	if (err)
+		pr_warn("%s: Couldn't start RQB-CFL!\n", __func__);
 
 	init_timer(&load_timer);
 	load_timer.function = calculate_load_timer;
