@@ -1138,6 +1138,7 @@ struct cpuquiet_governor rqbalance_governor = {
 	.name		= "rqbalance",
 	.start		= rqbalance_start,
 	.stop		= rqbalance_stop,
+	.use_isolation	= false,
 	.owner		= THIS_MODULE,
 };
 
