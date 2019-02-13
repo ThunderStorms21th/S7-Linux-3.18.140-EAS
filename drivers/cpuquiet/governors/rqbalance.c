@@ -101,6 +101,8 @@ struct cpu_limits {
 	bool cpuhp_scheduled;
 };
 
+struct cpuquiet_governor rqbalance_governor;
+
 static DEFINE_PER_CPU(struct idle_info, idleinfo);
 static DEFINE_PER_CPU(unsigned int, cpu_load);
 
@@ -124,6 +126,9 @@ static struct delayed_work rqbalance_work;
 static RQBALANCE_STATE rqbalance_state;
 static struct notifier_block pm_notifier_block;
 
+/* Either online or unisolated CPUs */
+const struct cpumask *avail_cpus_mask;
+
 static void calculate_load_timer(unsigned long data)
 {
 	int i;
@@ -132,7 +137,7 @@ static void calculate_load_timer(unsigned long data)
 	if (!load_timer_active)
 		return;
 
-	for_each_online_cpu(i) {
+	for_each_cpu(i, avail_cpus_mask) {
 		struct idle_info *iinfo = &per_cpu(idleinfo, i);
 		unsigned int *load = &per_cpu(cpu_load, i);
 
@@ -159,7 +164,7 @@ static void start_load_timer(void)
 
 	load_timer_active = true;
 
-	for_each_online_cpu(i) {
+	for_each_cpu(i, avail_cpus_mask) {
 		struct idle_info *iinfo = &per_cpu(idleinfo, i);
 
 		iinfo->idle_current =
@@ -183,7 +188,7 @@ static unsigned int get_slowest_cpu_n(void)
 	unsigned long minload = ULONG_MAX;
 	int i;
 
-	for_each_online_cpu(i) {
+	for_each_cpu(i, avail_cpus_mask) {
 		unsigned int *load = &per_cpu(cpu_load, i);
 
 		if ((i > 0) && (minload > *load)) {
@@ -200,7 +205,7 @@ static unsigned int cpu_highest_speed(void)
 	unsigned int maxload = 0;
 	int i;
 
-	for_each_online_cpu(i) {
+	for_each_cpu(i, avail_cpus_mask) {
 		unsigned int *load = &per_cpu(cpu_load, i);
 
 		maxload = max(maxload, *load);
@@ -214,7 +219,7 @@ static unsigned int count_slow_cpus(unsigned int limit)
 	unsigned int cnt = 0;
 	int i;
 
-	for_each_online_cpu(i) {
+	for_each_cpu(i, avail_cpus_mask) {
 		unsigned int *load = &per_cpu(cpu_load, i);
 
 		if (*load <= limit)
@@ -229,7 +234,7 @@ static unsigned int num_online_cluster_cpus(bool cluster)
 	unsigned int cnt = 0;
 	int i;
 
-	for_each_online_cpu(i) {
+	for_each_cpu(i, avail_cpus_mask) {
 		if (topology_physical_package_id(i) == cluster)
 			cnt++;
 	}
@@ -1073,6 +1078,9 @@ static int rqbalance_start(void)
 	err = rqbalance_sysfs_init();
 	if (err)
 		return err;
+
+	avail_cpus_mask = rqbalance_governor.use_isolation ?
+				cpu_unisolated_mask : cpu_online_mask;
 
 	rqbalance_wq = alloc_workqueue("cpuquiet-rqbalance",
 			WQ_UNBOUND | WQ_FREEZABLE, 1);
