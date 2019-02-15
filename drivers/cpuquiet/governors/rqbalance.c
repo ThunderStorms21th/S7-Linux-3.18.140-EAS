@@ -1030,6 +1030,12 @@ static int rqbalance_get_package_info(void)
 				table[(count / 2) - 2].frequency;
 	};
 
+	/* TODO: Check if we are effectively using HMP!!! This is NOT OK!!! */
+	soc_is_hmp = (available_clusters > 1) ? true : false;
+	pr_info("rqbalance: running as %s in %s mode\n",
+		soc_is_hmp ? "hmp" : "smp",
+		rqbalance_governor.use_isolation ? "isolation" : "hotplug");
+
 	return 0;
 }
 
