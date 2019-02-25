@@ -116,7 +116,23 @@ SCHED_FEAT(ENERGY_AWARE, false)
  */
 SCHED_FEAT(ENERGY_FILTER, false)
 
- /*
+/*
+ * Minimum capacity capping. Keep track of minimum capacity factor when
+ * minimum frequency available to a policy is modified.
+ * If enabled, this can be used to inform the scheduler about capacity
+ * restrictions.
+ */
+SCHED_FEAT(MIN_CAPACITY_CAPPING, false)
+
+/*
+ * Maximum capacity capping. Keep track of maximum capacity factor when
+ * maximum frequency available to a policy is modified.
+ * If enabled, this can be used to inform the scheduler about capacity
+ * restrictions.
+ */
+SCHED_FEAT(MAX_CAPACITY_CAPPING, false)
+
+/*
  * Apply schedtune boost hold to tasks of all sched classes.
  * If enabled, schedtune will hold the boost applied to a CPU
  * for 50ms regardless of task activation - if the task is
@@ -126,12 +142,4 @@ SCHED_FEAT(ENERGY_FILTER, false)
  * RT class.
  */
 SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
-
-/*
- * Minimum capacity capping. Keep track of minimum capacity factor when
- * minimum frequency available to a policy is modified.
- * If enabled, this can be used to inform the scheduler about capacity
- * restrictions.
- */
-SCHED_FEAT(MIN_CAPACITY_CAPPING, false)
 
