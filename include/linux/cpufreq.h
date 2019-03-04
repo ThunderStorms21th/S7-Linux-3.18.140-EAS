@@ -83,6 +83,7 @@ struct cpufreq_policy {
 	unsigned int		load_at_max;  /* CPU utilization at max frequency */
 
 	unsigned int		policy; /* see above */
+	unsigned int		last_policy; /* policy before unplug */
 	struct cpufreq_governor	*governor; /* see below */
 	void			*governor_data;
 	bool			governor_enabled; /* governor start/stop flag */
@@ -779,6 +780,8 @@ ssize_t cpufreq_show_cpus(const struct cpumask *mask, char *buf);
 int cpufreq_boost_trigger_state(int state);
 int cpufreq_boost_supported(void);
 int cpufreq_boost_enabled(void);
+int cpufreq_enable_boost_support(void);
+bool policy_has_boost_freq(struct cpufreq_policy *policy);
 #else
 static inline int cpufreq_boost_trigger_state(int state)
 {
@@ -791,6 +794,15 @@ static inline int cpufreq_boost_supported(void)
 static inline int cpufreq_boost_enabled(void)
 {
 	return 0;
+}
+static inline int cpufreq_enable_boost_support(void)
+{
+	return -EINVAL;
+}
+
+static inline bool policy_has_boost_freq(struct cpufreq_policy *policy)
+{
+	return false;
 }
 #endif
 /* the following funtion is for cpufreq core use only */
