@@ -163,7 +163,7 @@ static void update_cpu_capacity(unsigned int cpu)
 	set_capacity_scale(cpu, capacity);
 
 	printk(KERN_INFO "CPU%u: update cpu_capacity %lu\n",
-		cpu, arch_scale_cpu_capacity(NULL, cpu));
+		cpu, arch_scale_cpu_capacity(cpu));
 }
 
 #ifdef CONFIG_CPU_FREQ

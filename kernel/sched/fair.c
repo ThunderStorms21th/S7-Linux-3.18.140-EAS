@@ -797,7 +797,15 @@ void post_init_entity_util_avg(struct sched_entity *se)
 {
 	struct cfs_rq *cfs_rq = cfs_rq_of(se);
 	struct sched_avg *sa = &se->avg;
-	long cap = (long)(SCHED_CAPACITY_SCALE - cfs_rq->avg.util_avg) / 2;
+	u32 slice;
+	struct sched_entity *se = &p->se;
+	struct cfs_rq *cfs_rq = cfs_rq_of(se);
+	struct sched_avg *sa = &se->avg;
+	long cpu_scale = arch_scale_cpu_capacity(cpu_of(rq_of(cfs_rq)));
+	long cap = (long)(cpu_scale - cfs_rq->avg.util_avg) / 2;
+	// long cap = (long)(SCHED_CAPACITY_SCALE - cfs_rq->avg.util_avg) / 2;
+	
+	
 
 	if (cap > 0) {
 		if (cfs_rq->avg.util_avg != 0) {
@@ -829,7 +837,6 @@ void post_init_entity_util_avg(struct sched_entity *se)
 			return;
 		}
 	}
-
 	attach_entity_cfs_rq(se);
 }
 
@@ -7960,9 +7967,9 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	unsigned long flags;
 
 	if (Larch_power)
-		capacity *= arch_scale_cpu_capacity(sd, cpu);
+		capacity *= arch_scale_cpu_capacity(cpu);
 	else
-		capacity *= default_scale_cpu_capacity(sd, cpu);
+		capacity *= default_scale_cpu_capacity(cpu);
 
 	capacity >>= SCHED_CAPACITY_SHIFT;
 	cpu_rq(cpu)->cpu_capacity_orig = capacity;
@@ -7973,7 +7980,7 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	mcc = &cpu_rq(cpu)->rd->max_cpu_capacity;
 
 	if (Larch_power)
-		capacity *= arch_scale_freq_capacity(sd, cpu);
+		capacity *= arch_scale_freq_capacity(cpu);
 	else
 		capacity *= default_scale_capacity(sd, cpu);
 		
@@ -8596,6 +8603,10 @@ static inline void calculate_imbalance(struct lb_env *env, struct sd_lb_stats *s
 {
 	unsigned long max_pull, load_above_capacity = ~0UL;
 	struct sg_lb_stats *local, *busiest;
+	struct rq *rq = cpu_rq(cpu);
+	unsigned long max = arch_scale_cpu_capacity(cpu);
+	unsigned long used, free;
+	unsigned long irq;
 
 	local = &sds->local_stat;
 	busiest = &sds->busiest_stat;
@@ -8703,6 +8714,7 @@ static struct sched_group *find_busiest_group(struct lb_env *env)
 {
 	struct sg_lb_stats *local, *busiest;
 	struct sd_lb_stats sds;
+	cpu_rq(cpu)->cpu_capacity_orig = arch_scale_cpu_capacity(cpu);
 
 	init_sd_lb_stats(&sds);
 
