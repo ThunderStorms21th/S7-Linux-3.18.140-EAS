@@ -643,6 +643,9 @@ extern struct cpufreq_governor cpufreq_gov_pixel_smurfutil;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PIXEL_SCHEDUTIL)
 extern struct cpufreq_governor cpufreq_gov_pixel_schedutil;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_pixel_schedutil)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_BLU_BALLS)
+extern struct cpufreq_governor cpufreq_gov_blu_balls;
+#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_blu_balls)
 #endif
 
 static inline void cpufreq_policy_apply_limits(struct cpufreq_policy *policy)
