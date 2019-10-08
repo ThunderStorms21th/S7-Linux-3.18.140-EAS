@@ -508,6 +508,7 @@ wait:
 	spin_unlock(&policy->transition_lock);
 
 	scale_freq_capacity(policy, freqs);
+
 	for_each_cpu(cpu, policy->cpus)
 		trace_cpu_capacity(capacity_curr_of(cpu), cpu);
 
@@ -2547,7 +2548,9 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 			CPUFREQ_NOTIFY, new_policy);
 
 	scale_freq_capacity(new_policy, NULL);
-	scale_max_freq_capacity(policy->cpus, policy->max);
+
+	// scale_max_freq_capacity(policy->cpus, policy->max);
+	scale_max_freq_capacity(policy->cpus, new_policy->max);
 
 	policy->min = new_policy->min;
 	policy->max = new_policy->max;
