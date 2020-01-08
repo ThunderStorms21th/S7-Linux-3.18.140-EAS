@@ -538,7 +538,7 @@ void schedtune_enqueue_task(struct task_struct *p, int cpu)
 	raw_spin_unlock_irqrestore(&bg->lock, irq_flags);
 }
 
-static int schedtune_can_attach(struct cgroup_subsys_state *css,
+int schedtune_can_attach(struct cgroup_subsys_state *css,
 			  struct cgroup_taskset *tset)
 {
 	struct task_struct *task;
