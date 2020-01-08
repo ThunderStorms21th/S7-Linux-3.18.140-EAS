@@ -128,6 +128,7 @@
 			reg = <0x0 0x100>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			efficiency = <1024>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@101 {
@@ -136,6 +137,7 @@
 			reg = <0x0 0x101>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			efficiency = <1024>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@102 {
@@ -144,6 +146,7 @@
 			reg = <0x0 0x102>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			efficiency = <1024>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@103 {
@@ -152,6 +155,7 @@
 			reg = <0x0 0x103>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			efficiency = <1024>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@0 {
@@ -160,6 +164,7 @@
 			reg = <0x0 0x0>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			efficiency = <1536>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@1 {
@@ -168,6 +173,7 @@
 			reg = <0x0 0x1>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			efficiency = <1536>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@2 {
@@ -176,6 +182,7 @@
 			reg = <0x0 0x2>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			efficiency = <1536>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@3 {
@@ -184,6 +191,7 @@
 			reg = <0x0 0x3>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			efficiency = <1536>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 
