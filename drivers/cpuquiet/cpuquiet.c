@@ -208,7 +208,8 @@ static void __cpuinit cpuquiet_work_func(struct work_struct *work)
 
 	cpumask_and(&offline, &offline, &cpu_online);
 	for_each_cpu(cpu, &offline)
-		device_offline(get_cpu_device(cpu));
+		if (cpu != 4)
+			device_offline(get_cpu_device(cpu));
 
 	wake_up_interruptible(&wait_cpu);
 }
