@@ -169,6 +169,9 @@ static int cpuquiet_cpu_set_online(unsigned int cpu)
 
 static int cpuquiet_cpu_set_offline(unsigned int cpu)
 {
+	if (cpu == 4)
+		return 0;
+
 	return device_offline(get_cpu_device(cpu));
 }
 
