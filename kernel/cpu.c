@@ -983,6 +983,10 @@ static DECLARE_BITMAP(cpu_isolated_bits, CONFIG_NR_CPUS) __read_mostly;
 const struct cpumask *const cpu_isolated_mask = to_cpumask(cpu_isolated_bits);
 EXPORT_SYMBOL(cpu_isolated_mask);
 
+static DECLARE_BITMAP(cpu_unisolated_bits, CONFIG_NR_CPUS) __read_mostly;
+const struct cpumask *const cpu_unisolated_mask = to_cpumask(cpu_unisolated_bits);
+EXPORT_SYMBOL(cpu_unisolated_mask);
+
 void set_cpu_possible(unsigned int cpu, bool possible)
 {
 	if (possible)
@@ -1019,10 +1023,12 @@ void set_cpu_active(unsigned int cpu, bool active)
 
 void set_cpu_isolated(unsigned int cpu, bool isolated)
 {
-	if (isolated)
+	if (isolated) {
 		cpumask_set_cpu(cpu, to_cpumask(cpu_isolated_bits));
-	else
+	} else {
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_isolated_bits));
+		cpumask_set_cpu(cpu, to_cpumask(cpu_unisolated_bits));
+	}
 }
 
 void init_cpu_present(const struct cpumask *src)
@@ -1043,6 +1049,11 @@ void init_cpu_online(const struct cpumask *src)
 void init_cpu_isolated(const struct cpumask *src)
 {
 	cpumask_copy(to_cpumask(cpu_isolated_bits), src);
+}
+
+void init_cpu_unisolated(const struct cpumask *src)
+{
+	cpumask_copy(to_cpumask(cpu_unisolated_bits), src);
 }
 
 static ATOMIC_NOTIFIER_HEAD(idle_notifier);
