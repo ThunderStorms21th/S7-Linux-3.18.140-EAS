@@ -17,6 +17,9 @@
 struct watchdog_ops;
 struct watchdog_device;
 
+extern void watchdog_disable(unsigned int cpu);
+extern void watchdog_enable(unsigned int cpu);
+
 /** struct watchdog_ops - The watchdog-devices operations
  *
  * @owner:	The module owner.

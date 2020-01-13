@@ -317,12 +317,13 @@ extern void init_idle_bootup_task(struct task_struct *idle);
 extern int runqueue_is_locked(int cpu);
 
 /* Isolate CPU */
-#ifdef CONFIG_HISI_CPU_ISOLATION
+// #ifdef CONFIG_HISI_CPU_ISOLATION
+#ifdef CONFIG_HOTPLUG_CPU
 extern int sched_isolate_count(const cpumask_t *mask, bool include_offline);
 extern int sched_isolate_cpu(int cpu);
 extern int sched_isolate_cpu_unlocked(int cpu);
 extern int sched_unisolate_cpu(int cpu);
-extern int sched_unisolate_cpu_unlocked(int cpu, bool reset_vote);
+extern int sched_unisolate_cpu_unlocked(int cpu);
 #else
 static inline int sched_isolate_count(const cpumask_t *mask,
 				      bool include_offline)
@@ -352,7 +353,7 @@ static inline int sched_unisolate_cpu(int cpu)
 	return 0;
 }
 
-static inline int sched_unisolate_cpu_unlocked(int cpu, bool reset_vote)
+static inline int sched_unisolate_cpu_unlocked(int cpu)
 {
 	return 0;
 }

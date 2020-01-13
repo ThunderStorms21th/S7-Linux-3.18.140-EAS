@@ -9576,6 +9576,14 @@ static void nohz_balancer_kick(void)
 	return;
 }
 
+void nohz_balance_clear_nohz_mask(int cpu)
+{
+	if (likely(cpumask_test_cpu(cpu, nohz.idle_cpus_mask))) {
+		cpumask_clear_cpu(cpu, nohz.idle_cpus_mask);
+		atomic_dec(&nohz.nr_cpus);
+	}
+}
+
 static inline void nohz_balance_exit_idle(int cpu)
 {
 	if (unlikely(test_bit(NOHZ_TICK_STOPPED, nohz_flags(cpu)))) {

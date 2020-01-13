@@ -2050,6 +2050,8 @@ walt_task_in_cum_window_demand(struct rq *rq, struct task_struct *p)
 
 #endif /* CONFIG_SCHED_WALT */
 
+extern void nohz_balance_clear_nohz_mask(int cpu);
+
 #ifdef arch_scale_freq_capacity
 #ifndef arch_scale_freq_invariant
 #define arch_scale_freq_invariant()     (true)

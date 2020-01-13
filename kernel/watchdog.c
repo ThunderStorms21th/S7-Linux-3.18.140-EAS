@@ -30,6 +30,7 @@
 
 #include <linux/exynos-ss.h>
 #include <linux/irqflags.h>
+#include <linux/watchdog.h>
 
 #ifdef CONFIG_SEC_DEBUG
 static const char * const hl_to_name[] = {
@@ -560,7 +561,7 @@ static void watchdog_set_prio(unsigned int policy, unsigned int prio)
 	sched_setscheduler(current, policy, &param);
 }
 
-static void watchdog_enable(unsigned int cpu)
+void watchdog_enable(unsigned int cpu)
 {
 	struct hrtimer *hrtimer = raw_cpu_ptr(&watchdog_hrtimer);
 
@@ -580,7 +581,7 @@ static void watchdog_enable(unsigned int cpu)
 	__touch_watchdog();
 }
 
-static void watchdog_disable(unsigned int cpu)
+void watchdog_disable(unsigned int cpu)
 {
 	struct hrtimer *hrtimer = raw_cpu_ptr(&watchdog_hrtimer);
 
