@@ -122,25 +122,13 @@
 		#address-cells = <2>;
 		#size-cells = <0>;
 
-		hmp {
-			up_threshold = <524>;
-			down_threshold = <214>;
-			semiboost_up_threshold = <254>;
-			semiboost_down_threshold = <163>;
-			bootboost-duration-us = <40000000>;
-
-			down_compensation_timeout = <30>;		/* ms */
-			down_compensation_high_freq = <1170000>;	/* min qos lock for little cpu */
-			down_compensation_mid_freq = <962000>;		/* min qos lock for little cpu */
-			down_compensation_low_freq = <858000>;		/* min qos lock for little cpu */
-		};
-
 		cpu@100 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a53", "arm,armv8";
 			reg = <0x0 0x100>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@101 {
 			device_type = "cpu";
@@ -148,6 +136,7 @@
 			reg = <0x0 0x101>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@102 {
 			device_type = "cpu";
@@ -155,6 +144,7 @@
 			reg = <0x0 0x102>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@103 {
 			device_type = "cpu";
@@ -162,6 +152,7 @@
 			reg = <0x0 0x103>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@0 {
 			device_type = "cpu";
@@ -169,6 +160,7 @@
 			reg = <0x0 0x0>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@1 {
 			device_type = "cpu";
@@ -176,6 +168,7 @@
 			reg = <0x0 0x1>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@2 {
 			device_type = "cpu";
@@ -183,6 +176,7 @@
 			reg = <0x0 0x2>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@3 {
 			device_type = "cpu";
@@ -190,6 +184,7 @@
 			reg = <0x0 0x3>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 
 		idle-states {
@@ -213,6 +208,107 @@
 				exit-latency-us = <75>;
 				min-residency-us = <2000>;
 				status = "okay";
+			};
+		};
+
+		energy-costs {
+			CPU_COST_0: core-cost0 {
+				busy-cost-data = <
+					99 16
+					123 23
+					146 31
+					169 39
+					193 49
+					216 60
+					240 78
+					263 96
+					286 116
+					309 138
+					333 162
+					356 207
+				>;
+				idle-cost-data = <
+					1
+					0
+					0
+				>;
+			};
+			CPU_COST_1: core-cost1 {
+				busy-cost-data = <
+					286 232
+					327 282
+					368 343
+					408 447
+					449 530
+					489 607
+					529 690
+					572 796
+					612 913
+					652 1061
+					700 1293
+					734 1454
+					778 1630
+					815 1783
+					858 1981
+					902 2191
+					943 2460
+					984 2707
+					1024 2960
+				>;
+				idle-cost-data = <
+					10
+					0
+					0
+				>;
+			};
+			CLUSTER_COST_0: cluster-cost0 {
+				busy-cost-data = <
+					93 1
+					115 17
+					138 23
+					159 23
+					181 25
+					203 29
+					225 34
+					247 35
+					270 37
+					292 40
+					314 48
+					336 49
+				>;
+				idle-cost-data = <
+					5
+					5
+					0
+				>;
+			};
+			CLUSTER_COST_1: cluster-cost1 {
+				busy-cost-data = <
+					285 34
+					326 38
+					367 38
+					408 42
+					449 44
+					490 49
+					531 55
+					573 61
+					612 68
+					655 75
+					695 84
+					734 93
+					776 108
+					818 132
+					859 154
+					902 171
+					943 178
+					984 192
+					1024 208
+				>;
+				idle-cost-data = <
+					50
+					50
+					0
+				>;
 			};
 		};
 	};
