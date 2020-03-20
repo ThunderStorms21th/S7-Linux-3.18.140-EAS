@@ -586,7 +586,13 @@ struct rq {
 #ifdef CONFIG_NO_HZ_COMMON
 	u64 nohz_stamp;
 	unsigned long nohz_flags;
-#endif
+#ifdef CONFIG_SMP
+	unsigned long		last_blocked_load_update_tick;
+	unsigned int		has_blocked_load;
+#endif /* CONFIG_SMP */
+	unsigned int		nohz_tick_stopped;
+#endif /* CONFIG_NO_HZ_COMMON */
+
 #ifdef CONFIG_NO_HZ_FULL
 	unsigned long last_sched_tick;
 #endif
