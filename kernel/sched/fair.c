@@ -8678,6 +8678,15 @@ static inline void calculate_imbalance(struct lb_env *env, struct sd_lb_stats *s
 			load_above_capacity -= busiest->group_capacity;
 		else
 			load_above_capacity = ~0UL;
+
+		/*
+		 * If the local group is more loaded than the selected
+		 * busiest group don't try to pull any tasks.
+		 */
+		if (local->avg_load >= busiest->avg_load) {
+			env->imbalance = 0;
+			return;
+		}
 	}
 
 	/*
