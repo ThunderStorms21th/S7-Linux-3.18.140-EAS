@@ -218,3 +218,9 @@ on boot
    write /sys/kernel/autosmp/conf/scroff_single_core 0
    # 1- enable, 0 - disable
    
+   # EAS Schedtune
+   write /sys/module/cpu_boost/parameters/dynamic_stune_boost 25
+   write /sys/module/cpu_boost/parameters/input_boost_ms 750
+   write /dev/stune/foreground/schedtune.boost 8
+   write /dev/stune/foreground/schedtune.prefer_idle 1
+   write /dev/stune/schedtune.boost 5
