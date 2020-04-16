@@ -1542,6 +1542,13 @@ static inline unsigned long cpu_util(int cpu)
 	return __cpu_util(cpu, 0);
 }
 
+struct sched_walt_cpu_load {
+	unsigned long prev_window_util;
+	unsigned long nl;
+	unsigned long pl;
+	u64 ws;
+};
+
 #endif
 
 #ifdef CONFIG_CPU_FREQ_GOV_SCHED
