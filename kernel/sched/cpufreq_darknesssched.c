@@ -36,7 +36,7 @@ unsigned long boosted_cpu_util(int cpu);
 #define DKGOV_KTHREAD_PRIORITY	50
 
 #define BOOST_PERC					5
-#define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(80000 * NSEC_PER_USEC))
+#define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(30000 * NSEC_PER_USEC))
 
 struct dkgov_tunables {
 	struct gov_attr_set attr_set;
@@ -92,7 +92,7 @@ static DEFINE_PER_CPU(struct dkgov_cpu, dkgov_cpu);
 static DEFINE_PER_CPU(struct dkgov_tunables, cached_tunables);
 
 #define LITTLE_NFREQS				18
-#define BIG_NFREQS					25
+#define BIG_NFREQS				25
 static unsigned long little_capacity[LITTLE_NFREQS] = {
 	0,
 	149,
