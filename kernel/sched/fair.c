@@ -6504,15 +6504,6 @@ static inline int find_best_target(struct task_struct *p, bool boosted, bool pre
 				backup_capacity = cur_capacity;
 				backup_cpu = i;
 			}
-
-			/* Favor CPUs with maximum spare capacity */
-			if ((capacity_orig - min_capped_util) <
-				target_max_spare_cap)
-				continue;
-
-			target_max_spare_cap = capacity_orig - min_capped_util;
-			target_capacity = capacity_orig;
-			target_cpu = i;
 		}
 	} while (sg = sg->next, sg != sd->groups);
 
