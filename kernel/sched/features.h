@@ -103,11 +103,7 @@ SCHED_FEAT(NUMA_RESIST_LOWER, false)
  * Energy aware scheduling. Use platform energy model to guide scheduling
  * decisions optimizing for energy efficiency.
  */
-#ifdef CONFIG_DEFAULT_USE_ENERGY_AWARE
 SCHED_FEAT(ENERGY_AWARE, true)
-#else
-SCHED_FEAT(ENERGY_AWARE, false)
-#endif
 
 /*
  * SchedTune. Use Performance/Energy filtering function to evaluate the trade
@@ -126,18 +122,3 @@ SCHED_FEAT(ENERGY_FILTER, false)
  * RT class.
  */
 SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
-
-/*
- * Bias schedtune boosted tasks to higher capacity CPUs.
- * If disabled, no bias will be applied.
- */
-SCHED_FEAT(STUNE_BOOST_BIAS_BIG, true)
-
-/*
- * Minimum capacity capping. Keep track of minimum capacity factor when
- * minimum frequency available to a policy is modified.
- * If enabled, this can be used to inform the scheduler about capacity
- * restrictions.
- */
-SCHED_FEAT(MIN_CAPACITY_CAPPING, false)
-
