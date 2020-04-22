@@ -4085,13 +4085,6 @@ static void throttle_cfs_rq(struct cfs_rq *cfs_rq)
 	else
 		list_add_tail_rcu(&cfs_rq->throttled_list, &cfs_b->throttled_cfs_rq);
 
-	/*
-	 * If we're the first throttled task, make sure the bandwidth
-	 * timer is running.
-	 */
-	if (empty)
-		start_cfs_bandwidth(cfs_b);
-
 	if (!cfs_b->timer_active)
 		__start_cfs_bandwidth(cfs_b, false);
 	raw_spin_unlock(&cfs_b->lock);
