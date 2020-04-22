@@ -5382,8 +5382,6 @@ unsigned long group_max_util(struct energy_env *eenv)
 {
 	int i, delta;
 	unsigned long max_util = 0;
-	unsigned long util;
-	int cpu;
 
 	for_each_cpu(i, sched_group_cpus(eenv->sg_cap)) {
 		delta = calc_util_delta(eenv, i);
@@ -6353,18 +6351,10 @@ static int start_cpu(bool boosted)
 static inline int find_best_target(struct task_struct *p, bool boosted, bool prefer_idle)
 {
 	int target_cpu = -1;
-	unsigned long best_idle_min_cap_orig = ULONG_MAX;
 	unsigned long target_util = prefer_idle ? ULONG_MAX : 0;
 	unsigned long backup_capacity = ULONG_MAX;
 	int backup_cpu = -1;
 	unsigned long min_util = boosted_task_util(p);
-	unsigned long target_capacity = ULONG_MAX;
-	unsigned long min_wake_util = ULONG_MAX;
-	unsigned long target_max_spare_cap = 0;
-	unsigned long best_active_util = ULONG_MAX;
-	unsigned long target_idle_max_spare_cap = 0;
-	int best_idle_cpu = -1;
-	int best_idle_cstate = INT_MAX;
 	struct sched_domain *sd;
 	struct sched_group *sg;
 	int cpu = start_cpu(boosted);
@@ -6396,9 +6386,6 @@ static inline int find_best_target(struct task_struct *p, bool boosted, bool pre
 		for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg)) {
 			unsigned long cur_capacity, new_util, wake_util;
 			unsigned long min_wake_util = ULONG_MAX;
-			unsigned long capacity_curr = capacity_curr_of(i);
-			unsigned long capacity_orig = capacity_orig_of(i);
-			unsigned long min_capped_util;
 
 			if (!cpu_online(i))
 				continue;
@@ -6418,15 +6405,6 @@ static inline int find_best_target(struct task_struct *p, bool boosted, bool pre
 			 */
 			new_util = max(min_util, new_util);
 
-			/*
-			 * Include minimum capacity constraint:
-			 * new_util contains the required utilization including
-			 * boost. min_capped_util also takes into account a
-			 * minimum capacity cap imposed on the CPU by external
-			 * actors.
-			 */
-			min_capped_util = max(new_util, capacity_min_of(i));
-
 			if (new_util > capacity_orig_of(i))
 				continue;
 
@@ -6443,38 +6421,6 @@ static inline int find_best_target(struct task_struct *p, bool boosted, bool pre
 				schedstat_inc(p, se.statistics.nr_wakeups_fbt_pref_idle);
 				schedstat_inc(this_rq(), eas_stats.fbt_pref_idle);
 				return i;
-				}
-
-			if (idle_cpu(i)) {
-				int idle_idx = idle_get_state_idx(cpu_rq(i));
-
-				/* Select idle CPU with lower cap_orig */
-				if (capacity_orig > best_idle_min_cap_orig)
-					continue;
-				/* Favor CPUs that won't end up running at a
-				 * high OPP.
-				 */
-				if ((capacity_orig - min_capped_util) <
-					target_idle_max_spare_cap)
-					continue;
-
-				/*
-				 * Skip CPUs in deeper idle state, but only
-				 * if they are also less energy efficient.
-				 * IOW, prefer a deep IDLE LITTLE CPU vs a
-				 * shallow idle big CPU.
-				 */
-				if (sysctl_sched_cstate_aware &&
-				    best_idle_cstate <= idle_idx)
-					continue;
-
-				/* Keep track of best idle CPU */
-				best_idle_min_cap_orig = capacity_orig;
-				target_idle_max_spare_cap = capacity_orig -
-							    min_capped_util;
-				best_idle_cstate = idle_idx;
-				best_idle_cpu = i;
-				continue;
 			}
 
 			cur_capacity = capacity_curr_of(i);
