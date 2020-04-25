@@ -212,9 +212,7 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 	sg_policy->cached_raw_freq = freq;
 	return cpufreq_driver_resolve_freq(policy, freq);
 }
-
-static void sugov_get_util(unsigned long *util, unsigned long *max)
-			       
+      
 static inline bool use_pelt(void)			       
 {
 #ifdef CONFIG_SCHED_WALT
