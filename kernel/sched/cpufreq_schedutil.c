@@ -803,8 +803,16 @@ static void get_tunables_data(struct sugov_tunables *tunables,
 	}
 
 initialize:
-	tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
-	tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
+	/* Set LATENCY_MULTIPLER depends on cluster LITTLE.big  - XDA@nalas */
+	if (cpu == 0)
+		tunables->up_rate_limit_us = LATENCY_MULTIPLIER - 400;
+		tunables->down_rate_limit_us = LATENCY_MULTIPLIER - 400;
+	if (cpu == 4)
+		tunables->up_rate_limit_us = LATENCY_MULTIPLIER + 500;
+		tunables->down_rate_limit_us = LATENCY_MULTIPLIER - 500;
+
+	// tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
+	// tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {
 		tunables->up_rate_limit_us *= lat;
