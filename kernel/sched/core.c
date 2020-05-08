@@ -1343,15 +1343,6 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
 		goto out;
 	}
 
-	/*
-	 * Must re-check here, to close a race against __kthread_bind(),
-	 * sched_setaffinity() is not guaranteed to observe the flag.
-	 */
-	if (check && (p->flags & PF_NO_SETAFFINITY)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
 	if (cpumask_equal(&p->cpus_allowed, new_mask))
 		goto out;
 
@@ -1366,11 +1357,14 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
 		}
 	}
 
+	do_set_cpus_allowed(p, new_mask);
+
 	/* Can the task run on the task's current CPU? If so, we're done */
 	if (cpumask_test_cpu(task_cpu(p), &allowed_mask))
 		goto out;
 
 	dest_cpu = cpumask_any(&allowed_mask);
+
 	if (task_running(rq, p) || p->state == TASK_WAKING) {
 		struct migration_arg arg = { p, dest_cpu };
 		/* Need help from migration thread: drop lock and wait. */
