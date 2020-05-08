@@ -1355,19 +1355,20 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
 	if (cpumask_equal(&p->cpus_allowed, new_mask))
 		goto out;
 
-	if (!cpumask_intersects(new_mask, cpu_active_mask)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	do_set_cpus_allowed(p, new_mask);
-
-	/* Can the task run on the task's current CPU? If so, we're done */
-	if (cpumask_test_cpu(task_cpu(p), new_mask))
-		goto out;
-
 	cpumask_andnot(&allowed_mask, new_mask, cpu_isolated_mask);
 	cpumask_and(&allowed_mask, &allowed_mask, cpu_valid_mask);
+
+	if (cpumask_empty(&allowed_mask)) {
+		cpumask_and(&allowed_mask, cpu_valid_mask, new_mask);
+		if (cpumask_empty(&allowed_mask)) {
+			ret = -EINVAL;
+			goto out;
+		}
+	}
+
+	/* Can the task run on the task's current CPU? If so, we're done */
+	if (cpumask_test_cpu(task_cpu(p), &allowed_mask))
+		goto out;
 
 	dest_cpu = cpumask_any(&allowed_mask);
 	if (task_running(rq, p) || p->state == TASK_WAKING) {
@@ -1779,8 +1780,8 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
 	 *   not worry about this generic constraint ]
 	 */
 	if (unlikely(!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)) ||
-		     !cpu_online(cpu))) ||
-		     (cpu_isolated(cpu) && !allow_isolated))
+		     (!cpu_online(cpu)) ||
+		     (cpu_isolated(cpu) && !allow_isolated)))
 		cpu = select_fallback_rq(task_cpu(p), p, allow_isolated);
 
 	return cpu;
@@ -5802,7 +5803,7 @@ int do_isolation_work_cpu_stop(void *data)
 		set_rq_offline(rq);
 	}
 
-	migrate_tasks(cpu);
+	migrate_tasks(cpu, false);
 
 	if (rq->rd)
 		set_rq_online(rq);

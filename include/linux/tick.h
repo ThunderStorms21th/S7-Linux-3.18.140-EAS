@@ -204,7 +204,7 @@ static inline bool is_housekeeping_cpu(int cpu)
 	if (tick_nohz_full_enabled())
 		return cpumask_test_cpu(cpu, housekeeping_mask);
 #endif
-	return true;
+	return !cpu_isolated(cpu);
 }
 
 static inline void housekeeping_affine(struct task_struct *t)
