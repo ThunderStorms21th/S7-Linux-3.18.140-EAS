@@ -110,6 +110,7 @@ static DEFINE_PER_CPU(unsigned int, cpu_load);
 static struct timer_list load_timer;
 static bool load_timer_active;
 static bool soc_is_hmp = true;
+static unsigned int available_clusters = 0;
 
 /* configurable parameters */
 static signed int    balance_penalty = 0; /* Range: -99, +inf */
