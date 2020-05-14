@@ -58,8 +58,8 @@
 
 #define CPUNAMELEN 8
 
-#define RQ_SAMPLE_TIME_NS	250000000
-#define RQ_AVG_TIMER_RATE_NS	10000000
+#define RQ_SAMPLE_TIME_NS	250000000	// 250000000
+#define RQ_AVG_TIMER_RATE_NS	10000000	// 10000000
 #define RQ_SAMPLE_CAPACITY	(RQ_SAMPLE_TIME_NS / RQ_AVG_TIMER_RATE_NS)
 
 /* Don't put any CPU down prior at least 3x scheduling samplings */
@@ -109,7 +109,7 @@ static DEFINE_PER_CPU(unsigned int, cpu_load);
 
 static struct timer_list load_timer;
 static bool load_timer_active;
-static bool soc_is_hmp = true;
+static bool soc_is_hmp = false;	// true
 static unsigned int available_clusters = 0;
 
 /* configurable parameters */
@@ -575,8 +575,8 @@ static void rqbalance_work_func(struct work_struct *work)
 	case DOWN:
 		cpu = get_slowest_cpu_n();
 		if (cpu < nr_cpu_ids) {
-			up = false;
-			if (cpu_highest_speed() > 98) {
+			up = false;		// 98
+			if (cpu_highest_speed() > 95) {
 				rqbalance_state = UP;
 				queue_delayed_work(rqbalance_wq,
 					&rqbalance_work, recheck_delay);

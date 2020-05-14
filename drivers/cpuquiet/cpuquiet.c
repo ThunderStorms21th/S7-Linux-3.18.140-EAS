@@ -169,7 +169,11 @@ static int cpuquiet_cpu_set_online(unsigned int cpu)
 
 static int cpuquiet_cpu_set_offline(unsigned int cpu)
 {
-	if (cpu == 4)
+	/* Set CPU0-3 and CPU4-5 as always ON */
+	if (cpu == 4 || cpu == 5)
+		return 0;
+
+	if (cpu <= 2)
 		return 0;
 
 	return device_offline(get_cpu_device(cpu));
@@ -218,7 +222,7 @@ static void cpuquiet_work_func(struct work_struct *work)
 
 	mutex_unlock(&cpuquiet_cpu_lock);
 
-	/* always keep CPU0 online */
+	/* always keep CPU0-3 online */
 	cpumask_set_cpu(0, &online);
 	cpu_online = *curr_avail_cpus_mask;
 

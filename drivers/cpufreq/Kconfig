@@ -237,7 +237,7 @@ config CPU_FREQ_DEFAULT_GOV_SMARTMAX_EPS
 	bool "smartmax_eps"
 	select CPU_FREQ_GOV_SMARTMAX_EPS
 	help
-	  Use the CPUFreq governor 'smartmax eps' as defau
+	  Use the CPUFreq governor 'smartmax eps' as default
 
 config CPU_FREQ_DEFAULT_GOV_CHILL
 	bool "chill"
@@ -466,6 +466,7 @@ config CPU_FREQ_GOV_SMARTMAX_EPS
 	select CPU_FREQ_TABLE
 	help
 	  'smartmax EPS' is the extreme powersaving version of smartmax
+	  modded for Samsung Galaxy S7.
 
 comment "CPU frequency scaling drivers"
 
