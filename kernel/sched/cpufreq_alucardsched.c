@@ -12,6 +12,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -32,18 +39,20 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define ACGOV_KTHREAD_PRIORITY	50
+#define ACGOV_KTHREAD_PRIORITY	25			// 50
 
-#define UP_RATE_LIMIT_US		(20000)
-#define UP_RATE_LIMIT_US_BIGC		(20000)
-#define DOWN_RATE_LIMIT_US		(20000)
-#define FREQ_RESPONSIVENESS		1000000
+#define UP_RATE_LIMIT_US_LC		(30000)
+#define UP_RATE_LIMIT_US_BIGC		(100000)
+#define DOWN_RATE_LIMIT_US_LC		(40000)
+#define DOWN_RATE_LIMIT_US_BIGC		(50000)
+#define FREQ_RESPONSIVENESS_LC		1066000
+#define FREQ_RESPONSIVENESS_BC		1040000
 #define PUMP_INC_STEP_AT_MIN_FREQ	6
 #define PUMP_INC_STEP			3
 #define PUMP_DEC_STEP_AT_MIN_FREQ	3
 #define PUMP_DEC_STEP			1
 #define BOOST_PERC			10
-#define LATENCY_MULTIPLIER		(2000)
+#define LATENCY_MULTIPLIER		(5000)		// 2000
 #define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(30000 * NSEC_PER_USEC))
 
 struct acgov_tunables {
@@ -103,55 +112,46 @@ struct acgov_cpu {
 static DEFINE_PER_CPU(struct acgov_cpu, acgov_cpu);
 static DEFINE_PER_CPU(struct acgov_tunables, cached_tunables);
 
-#define LITTLE_NFREQS				18
-#define BIG_NFREQS				25
+#define LITTLE_NFREQS				13
+#define BIG_NFREQS				21
 static unsigned long little_capacity[LITTLE_NFREQS][2] = {
-	{0, 149},
-	{149, 188},
-	{188, 225},
-	{225, 257},
-	{257, 281},
-	{281, 315},
-	{315, 368},
-	{368, 406},
-	{406, 428},
-	{428, 469},
-	{469, 502},
-	{502, 538},
-	{538, 581},
-	{581, 611},
-	{611, 648},
-	{648, 684},
-	{684, 729},
-	{729, 763}
+	{0, 29},
+	{42, 55},
+	{55, 68},
+	{68, 81},
+	{81, 94},
+	{94, 107},
+	{107, 120},
+	{120, 133},
+	{133, 146},
+	{146, 159},
+	{159, 172},
+	{172, 185},
+	{185, 198}
 };
 
 static unsigned long big_capacity[BIG_NFREQS][2] = {
-	{0, 149},
-	{149, 188},
-	{188, 225},
-	{225, 257},
-	{257, 281},
-	{281, 315},
-	{315, 348},
-	{348, 374},
-	{374, 428},
-	{428, 469},
-	{469, 502},
-	{502, 538},
-	{538, 581},
-	{581, 611},
-	{611, 648},
-	{648, 684},
-	{684, 729},
-	{729, 763},
-	{763, 795},
-	{795, 832},
-	{832, 868},
-	{868, 905},
-	{905, 952},
-	{952, 979},
-	{979, 1024}
+	{0, 205},
+	{205, 246},
+	{246, 287},
+	{287, 328},
+	{328, 369},
+	{369, 410},
+	{410, 451},
+	{451, 491},
+	{491, 532},
+	{532, 573},
+	{573, 614},
+	{614, 655},
+	{655, 696},
+	{696, 737},
+	{737, 778},
+	{778, 819},
+	{819, 860},
+	{860, 901},
+	{901, 942},
+	{942, 983},
+	{983, 1024}
 };
 
 /************************ Governor internals ***********************/
@@ -289,7 +289,7 @@ static unsigned int resolve_target_freq(struct cpufreq_policy *policy,
 static void get_target_capacity(unsigned int cpu, int index,
 					unsigned long *down_cap, unsigned long *up_cap)
 {
-	if (cpu < 2) {
+	if (cpu < 4) {
 		*down_cap = little_capacity[index][0];
 		*up_cap = little_capacity[index][1];
 	} else {
@@ -957,18 +957,27 @@ static void get_tunables_data(struct acgov_tunables *tunables,
 	}
 
 initialize:
-	if (cpu < 2)
-		tunables->up_rate_limit_us = UP_RATE_LIMIT_US;
-	else
+	if (cpu < 4) {
+		tunables->up_rate_limit_us = UP_RATE_LIMIT_US_LC;
+		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US_LC;
+	} else {
 		tunables->up_rate_limit_us = UP_RATE_LIMIT_US_BIGC;
+		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US_BIGC;
+	}
 
-	tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US;
+	// tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US;
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {
 		tunables->up_rate_limit_us *= lat;
 		tunables->down_rate_limit_us *= lat;
 	}
-	tunables->freq_responsiveness = FREQ_RESPONSIVENESS;
+	/* Set FREQ_RESPONSIVENESS depends on cluster LITTLE.big  - XDA@nalas */
+	// tunables->freq_responsiveness = FREQ_RESPONSIVENESS;
+	if (cpu < 4) {
+		tunables->up_rate_limit_us = FREQ_RESPONSIVENESS_LC;
+	} else {
+		tunables->up_rate_limit_us = FREQ_RESPONSIVENESS_BC;
+	}
 	tunables->pump_inc_step_at_min_freq = PUMP_INC_STEP_AT_MIN_FREQ;
 	tunables->pump_dec_step_at_min_freq = PUMP_DEC_STEP_AT_MIN_FREQ;
 	tunables->pump_inc_step = PUMP_INC_STEP;

@@ -12,6 +12,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -29,7 +36,9 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define SUGOV_KTHREAD_PRIORITY	50
+#define LATENCY_MULTIPLIER_UP			(1000)
+#define LATENCY_MULTIPLIER_DOWN			(500)
+#define SUGOV_KTHREAD_PRIORITY			25	// 50
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;
@@ -892,6 +901,7 @@ static int sugov_init(struct cpufreq_policy *policy)
 	struct sugov_policy *sg_policy;
 	struct sugov_tunables *tunables;
 	unsigned int lat;
+	int cpu = smp_processor_id();
 	int ret = 0;
 
 	/* State should be equivalent to EXIT */
@@ -929,11 +939,12 @@ static int sugov_init(struct cpufreq_policy *policy)
 		ret = -ENOMEM;
 		goto stop_kthread;
 	}
-
-	tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
-	tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
+		
+     	tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP;
+	tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN;
 	tunables->hispeed_load = DEFAULT_HISPEED_LOAD;
-	tunables->hispeed_freq = 0;
+	tunables->hispeed_freq = 650000;
+		
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {
 		tunables->up_rate_limit_us *= lat;
