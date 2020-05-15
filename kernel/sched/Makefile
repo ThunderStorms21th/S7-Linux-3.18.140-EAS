@@ -38,5 +38,6 @@ obj-$(CONFIG_CPU_FREQ_GOV_HELIX) += cpufreq_helix_schedutil.o
 obj-$(CONFIG_CPU_FREQ_GOV_ENERGY) += cpufreq_energy_dcfc.o
 obj-$(CONFIG_CPU_FREQ_GOV_VLADUTIL) += cpufreq_vladutil.o
 obj-$(CONFIG_CPU_FREQ_GOV_SMURFUTIL_FLEX) += cpufreq_smurfutil_flex.o
+obj-$(CONFIG_CPU_FREQ_GOV_SMURFUTIL) += cpufreq_smurfutil.o
 
 
