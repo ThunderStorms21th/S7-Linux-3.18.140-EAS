@@ -11,6 +11,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -29,9 +36,13 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define EUGOV_KTHREAD_PRIORITY	50
-#define DEFAULT_SUSPEND_MAX_FREQ 0
-#define DEFAULT_SUSPEND_CAPACITY_FACTOR 10
+#define LATENCY_MULTIPLIER_UP			(1000)
+#define LATENCY_MULTIPLIER_DOWN			(500)
+#define EUGOV_KTHREAD_PRIORITY			25	// 50
+#define DEFAULT_SUSPEND_MAX_FREQ_SILVER 	800000
+#define DEFAULT_SUSPEND_MAX_FREQ_GOLD 		600000
+#define DEFAULT_SUSPEND_MAX_FREQ 		1200000
+#define DEFAULT_SUSPEND_CAPACITY_FACTOR 	10
 
 struct eugov_tunables {
 	struct gov_attr_set attr_set;
@@ -778,6 +789,7 @@ static int eugov_init(struct cpufreq_policy *policy)
 {
 	struct eugov_policy *eg_policy;
 	struct eugov_tunables *tunables;
+	int cpu = smp_processor_id();
 	int ret = 0;
 
 	/* State should be equivalent to EXIT */
@@ -822,8 +834,9 @@ static int eugov_init(struct cpufreq_policy *policy)
 	} else {
 		unsigned int lat;
 
-                tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
-                tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
+		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP;
+                tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN;
+                
 		lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 		if (lat) {
                         tunables->up_rate_limit_us *= lat;
@@ -833,8 +846,9 @@ static int eugov_init(struct cpufreq_policy *policy)
 
 	tunables->iowait_boost_enable = policy->iowait_boost_enable;
 
-	tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ;
-	tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ;
+	tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER;
+	tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD;
+		
 	tunables->suspend_capacity_factor = DEFAULT_SUSPEND_CAPACITY_FACTOR;
 
 	policy->governor_data = eg_policy;

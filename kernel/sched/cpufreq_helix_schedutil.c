@@ -9,6 +9,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -29,21 +36,21 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 
-#define UP_RATE_LIMIT				1000
-#define DOWN_RATE_LIMIT				5000
-#define BIT_SHIFT_1 				9
-#define BIT_SHIFT_2 				9
-#define TARGET_LOAD_1				32
-#define TARGET_LOAD_2				73
+#define UP_RATE_LIMIT				400	// 1000
+#define DOWN_RATE_LIMIT				500
+#define BIT_SHIFT_1 				5
+#define BIT_SHIFT_2 				8
+#define TARGET_LOAD_1				25
+#define TARGET_LOAD_2				75
 
-#define UP_RATE_LIMIT_BIGC			1000
-#define DOWN_RATE_LIMIT_BIGC		5000
+#define UP_RATE_LIMIT_BIGC			1000	// 1000
+#define DOWN_RATE_LIMIT_BIGC			500
 #define BIT_SHIFT_1_BIGC 			10
 #define BIT_SHIFT_2_BIGC 			6
-#define TARGET_LOAD_1_BIGC 			24
-#define TARGET_LOAD_2_BIGC 			71
+#define TARGET_LOAD_1_BIGC 			40
+#define TARGET_LOAD_2_BIGC 			90
 
-#define HXGOV_KTHREAD_PRIORITY		25
+#define HXGOV_KTHREAD_PRIORITY			25 // 25
 
 struct hxgov_tunables {
 	struct gov_attr_set attr_set;
@@ -819,7 +826,7 @@ static void get_tunables_data(struct hxgov_tunables *tunables,
 	}
 
 initialize:
-	if (cpu < 2){
+	if (cpu < 4){
 		tunables->up_rate_limit_us = UP_RATE_LIMIT;
 		tunables->down_rate_limit_us = DOWN_RATE_LIMIT;
 		tunables->bit_shift1 = BIT_SHIFT_1;

@@ -12,6 +12,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -32,10 +39,13 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define LATENCY_MULTIPLIER			(2000)
-#define DKGOV_KTHREAD_PRIORITY	50
+#define LATENCY_MULTIPLIER_LC_UP		(300)	// 2000
+#define LATENCY_MULTIPLIER_BC_UP		(1000)	// 2000
+#define LATENCY_MULTIPLIER_LC_DOWN		(400)	// 2000
+#define LATENCY_MULTIPLIER_BC_DOWN		(500)	// 2000
+#define DKGOV_KTHREAD_PRIORITY			25	// 50
 
-#define BOOST_PERC					5
+#define BOOST_PERC				5
 #define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(30000 * NSEC_PER_USEC))
 
 struct dkgov_tunables {
@@ -91,56 +101,48 @@ struct dkgov_cpu {
 static DEFINE_PER_CPU(struct dkgov_cpu, dkgov_cpu);
 static DEFINE_PER_CPU(struct dkgov_tunables, cached_tunables);
 
-#define LITTLE_NFREQS				18
-#define BIG_NFREQS				25
+#define LITTLE_NFREQS				13
+#define BIG_NFREQS				21
 static unsigned long little_capacity[LITTLE_NFREQS] = {
 	0,
-	149,
-	188,
-	225,
-	257,
-	281,
-	315,
-	368,
-	406,
-	428,
-	469,
-	502,
-	538,
-	581,
-	611,
-	648,
-	684,
-	729,
-	
+	42,
+	55,
+	68,
+	81,
+	94,
+	107,
+	120,
+	133,
+	146,
+	159,
+	172,
+	185,
+	198
 };
 
 static unsigned long big_capacity[BIG_NFREQS] = {
 	0,
-	149,
-	188,
-	225,
-	257,
-	281,
-	315,
-	348,
-	374,
-	428,
-	469,
-	502,
-	538,
-	581,
-	611,
-	648,
-	684,
-	729,
-	763,
-	795,
-	832,
-	868,
-	905,
-	952,
-	979
+	205,
+	246,
+	287,
+	328,
+	367,
+	410,
+	451,
+	492,
+	532,
+	573,
+	614,
+	655,
+	696,
+	737,
+	778,
+	819,
+	860,
+	901,
+	942,
+	983,
+	1024
 };
 
 /************************ Governor internals ***********************/
@@ -251,7 +253,7 @@ static unsigned int resolve_target_freq(struct cpufreq_policy *policy,
 		return 0;
 
 	table = policy->freq_table;
-	if (policy->cpu < 2) {
+	if (policy->cpu < 4) {
 		for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
 			if (table[i].frequency == CPUFREQ_ENTRY_INVALID
 				|| i >= LITTLE_NFREQS)
@@ -746,8 +748,18 @@ static void get_tunables_data(struct dkgov_tunables *tunables,
 	}
 
 initialize:
-	tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
-	tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
+/* 	tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
+	tunables->down_rate_limit_us = LATENCY_MULTIPLIER;	*/
+	
+	/* Set LATENCY_MULTIPLER depends on cluster LITTLE.big  - XDA@nalas */
+	if (cpu < 4){
+		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_LC_UP;
+		tunables->down_rate_limit_us = LATENCY_MULTIPLIER_LC_DOWN;
+	} else {
+		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_BC_UP;
+		tunables->down_rate_limit_us = LATENCY_MULTIPLIER_BC_DOWN;
+	}
+	
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {
 		tunables->up_rate_limit_us *= lat;

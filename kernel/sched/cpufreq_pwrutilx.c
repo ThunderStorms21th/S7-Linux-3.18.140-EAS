@@ -9,6 +9,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -27,7 +34,11 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define PWRGOV_KTHREAD_PRIORITY	25
+#define LATENCY_MULTIPLIER_BC_UP		(1000)
+#define LATENCY_MULTIPLIER_BC_DOWN		(500)
+#define LATENCY_MULTIPLIER_LC_UP		(300)
+#define LATENCY_MULTIPLIER_LC_DOWN		(400)
+#define PWRGOV_KTHREAD_PRIORITY			25	// 25
 
 struct pwrgov_tunables {
     struct gov_attr_set attr_set;
@@ -652,8 +663,18 @@ static void get_tunables_data(struct pwrgov_tunables *tunables,
     }
 
 initialize:
-    tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
-    tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
+    // tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
+    // tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
+    
+    /* Set LATENCY_MULTIPLER depends on cluster LITTLE.big  - XDA@nalas */
+    if (cpu < 4){
+	    tunables->up_rate_limit_us = LATENCY_MULTIPLIER_LC_UP;
+	    tunables->down_rate_limit_us = LATENCY_MULTIPLIER_LC_DOWN;
+    } else {
+	    tunables->up_rate_limit_us = LATENCY_MULTIPLIER_BC_UP;
+	    tunables->down_rate_limit_us = LATENCY_MULTIPLIER_BC_DOWN;
+    }
+    
     lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
     if (lat) {
 	tunables->up_rate_limit_us *= lat;

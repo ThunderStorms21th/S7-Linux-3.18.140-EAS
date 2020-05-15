@@ -9,6 +9,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -29,24 +36,26 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 
-#define UP_RATE_LIMIT				1000
-#define DOWN_RATE_LIMIT				1000
+#define UP_RATE_LIMIT				300	// 1000
+#define DOWN_RATE_LIMIT				400	// 1000
+#define UP_RATE_LIMIT_BC			1000	// 1000
+#define DOWN_RATE_LIMIT_BC			500	// 1000
 
 /* Frequency cap for target_load1 in KHz */
-#define LOAD1_CAP					1132800
+#define LOAD1_CAP				858000
 /* Frequency cap for target_load2 in KHz */
-#define LOAD2_CAP					1440000
-#define TARGET_LOAD_1				20
-#define TARGET_LOAD_2				50
+#define LOAD2_CAP				1274000
+#define TARGET_LOAD_1				20	// 20
+#define TARGET_LOAD_2				50	// 50
 
 /* Frequency cap for target_load1 in KHz */
-#define LOAD1_CAP_BIGC				1132800
+#define LOAD1_CAP_BIGC				1040000
 /* Frequency cap for target_load2 in KHz */
-#define LOAD2_CAP_BIGC				1900800
-#define TARGET_LOAD_1_BIGC 			15
-#define TARGET_LOAD_2_BIGC 			50
+#define LOAD2_CAP_BIGC				1872000
+#define TARGET_LOAD_1_BIGC 			35	// 15
+#define TARGET_LOAD_2_BIGC 			60	// 50
 
-#define NRGGOV_KTHREAD_PRIORITY		25
+#define NRGGOV_KTHREAD_PRIORITY			25	// 25
 
 struct nrggov_tunables {
 	struct gov_attr_set attr_set;
@@ -841,20 +850,25 @@ static void get_tunables_data(struct nrggov_tunables *tunables,
 	}
 
 initialize:
-	if (cpu < 2){
+	if (cpu < 4){
 		tunables->target_load1 = TARGET_LOAD_1;
 		tunables->target_load2 = TARGET_LOAD_2;
 		tunables->load1_cap = LOAD1_CAP;
 		tunables->load2_cap = LOAD2_CAP;
+		tunables->up_rate_limit_us = UP_RATE_LIMIT;
+		tunables->down_rate_limit_us = DOWN_RATE_LIMIT;
 	} else {
 		tunables->target_load1 = TARGET_LOAD_1_BIGC;
 		tunables->target_load2 = TARGET_LOAD_2_BIGC;
 		tunables->load1_cap = LOAD1_CAP_BIGC;
 		tunables->load2_cap = LOAD2_CAP_BIGC;
+		tunables->up_rate_limit_us = UP_RATE_LIMIT_BC;
+		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_BC;
 	}
+	/* Set LATENCY_MULTIPLER depends on cluster LITTLE.big  - XDA@nalas */
 
-	tunables->up_rate_limit_us = UP_RATE_LIMIT;
-	tunables->down_rate_limit_us = DOWN_RATE_LIMIT;
+	// tunables->up_rate_limit_us = UP_RATE_LIMIT;
+	// tunables->down_rate_limit_us = DOWN_RATE_LIMIT;
 	
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {
