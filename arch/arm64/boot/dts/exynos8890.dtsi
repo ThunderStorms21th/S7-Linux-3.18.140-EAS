@@ -194,9 +194,9 @@
 				desc = "boot cluster cpu sleep";
 				compatible = "exynos,idle-state";
 				arm,psci-suspend-param = <0x0010000>;
-				entry-latency-us = <30>;	/* 35   */
-				exit-latency-us = <150>;	/* 90   */
-				min-residency-us = <1500>;	/* 750  */
+				entry-latency-us = <50>;	/* 35   */
+				exit-latency-us = <120>;	/* 90   */
+				min-residency-us = <1000>;	/* 750  */
 				status = "okay";
 			};
 
@@ -204,8 +204,8 @@
 				desc = "non-boot cluster cpu sleep";
 				compatible = "exynos,idle-state";
 				arm,psci-suspend-param = <0x0010000>;
-				entry-latency-us = <80>;	/* 30   */
-				exit-latency-us = <50>;		/* 75   */
+				entry-latency-us = <50>;	/* 30   */
+				exit-latency-us = <60>;		/* 75   */
 				min-residency-us = <1000>;	/* 2000 */
 				status = "okay";
 			};
@@ -214,9 +214,6 @@
 		energy-costs {
 			CPU_COST_1: core-core1 {
 				busy-cost-data = <
-					82 63
-					123 80
-					164 101
 					205 128
 					246 160
 					287 200
@@ -240,40 +237,36 @@
 					1024 6326
 				>;
 				idle-cost-data = <
-					10
-					0
+					5
+					5
 					0
 				>;
 			};
 			CPU_COST_0: core-core0 {
 				busy-cost-data = <
-					19 7
-					34 10
-					49 13
-					64 16
-					78 23
-					93 31
-					108 39
-					123 49
-					138 60
-					153 78
-					168 96
-					183 116
-					198 132
-					213 169
-					228 207
+					29 10
+					42 13
+					55 16
+					68 23
+					81 31
+					94 39
+					107 49
+					120 60
+					133 78
+					146 96
+					159 116
+					172 132
+					185 169
+					198 207
 				>;
 				idle-cost-data = <
-					1
-					0
+					15
+					10
 					0
 				>;
 			};
 			CLUSTER_COST_1: cluster-core1 {
 				busy-cost-data = <
-					82 23
-					123 29
-					164 36
 					205 46
 					246 58
 					287 72
@@ -297,32 +290,31 @@
 					1024 2220
 				>;
 				idle-cost-data = <
-					250
-					250
+					5
+					5
 					0
 				>;
 			};
 			CLUSTER_COST_0: cluster-core0 {
 				busy-cost-data = <
-					19 1
-					34 3
-					49 4
-					64 5
-					78 7
-					93 9
-					108 11
-					123 14
-					138 18
-					153 23
-					168 28
-					183 34
-					198 39
-					213 50
-					228 61
+					29 1
+					42 3
+					55 5
+					68 7
+					81 9
+					94 11
+					107 14
+					120 18
+					133 23
+					146 28
+					159 34
+					172 39
+					185 50
+					198 61
 				>;
 				idle-cost-data = <
-					5
-					5
+					50
+					50
 					0
 				>;
 			};
@@ -537,7 +529,7 @@
 		/* APO */
 		cl0_idx_num = <19>;
 		cl0_max_support_idx = <4>;
-		cl0_min_support_idx = <18>;
+		cl0_min_support_idx = <17>;
 		cl0_boot_max_qos = <1586000>;
 		cl0_boot_min_qos = <1066000>;
 		cl0_en_ema = <1>;
@@ -546,9 +538,9 @@
 		/* MNGS */
 		cl1_idx_num = <28>;
 		cl1_max_support_idx = <4>;
-		cl1_min_support_idx = <27>;
+		cl1_min_support_idx = <25>;
 		cl1_boot_max_qos = <2288000>;
-		cl1_boot_min_qos = <1872000>;
+		cl1_boot_min_qos = <1560000>;
 		cl1_en_ema = <1>;
 		cl1_en_smpl = <1>;
 		cl1_jig_boot_max_qos = <1456000>;
@@ -588,9 +580,9 @@
 				  13   650000  725000   546000   /* ARM L13: 700MHz  */
 				  14   546000  693750   421000   /* ARM L14: 500MHz  */
 				  15   442000  656250	421000   /* ARM L15: 400MHz  */
-				  16   338000  625000	421000   /* ARM L16: 300MHz  */
-				  17   234000  618750	421000   /* ARM L17: 200MHz  */
-				  18   130000  618750	421000 >;/* ARM L18: 100MHz  */
+				  16   338000  625000	286000   /* ARM L16: 300MHz  */
+				  17   234000  618750	286000   /* ARM L17: 200MHz  */
+				  18   130000  618750	286000 >;/* ARM L18: 100MHz  */
 
 		/*MNGS table ->	 idx  freq    volt   bus_lock */
 		cl1_dvfs_domain_name = "dvfs_big";
@@ -619,9 +611,9 @@
 				  22  728000  812500    421000 /* ARM L22: 700MHz */
 				  23  624000  800000    421000 /* ARM L23: 600MHz */
 				  24  520000  800000    421000 /* ARM L23: 500MHz */
-				  25  416000  800000    421000 /* ARM L23: 400MHz */
-				  26  312000  800000    421000 /* ARM L23: 300MHz */
-				  27  208000  800000    421000 >;/* ARM L23: 200MHz */
+				  25  416000  800000    286000 /* ARM L23: 400MHz */
+				  26  312000  800000    286000 /* ARM L23: 300MHz */
+				  27  208000  800000    286000 >;/* ARM L23: 200MHz */
 	};
 
 
