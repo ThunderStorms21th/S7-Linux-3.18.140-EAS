@@ -628,6 +628,9 @@ extern struct cpufreq_governor cpufreq_gov_energy_dcfc;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PWRUTILX)
 extern struct cpufreq_governor cpufreq_gov_pwrutilx;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_pwrutilx)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_VLADUTIL)
+extern struct cpufreq_governor cpufreq_gov_vladutil;
+#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_vladutil)
 #endif
 
 static inline void cpufreq_policy_apply_limits(struct cpufreq_policy *policy)
