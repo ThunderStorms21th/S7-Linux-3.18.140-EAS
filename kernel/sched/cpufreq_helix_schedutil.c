@@ -50,7 +50,7 @@ unsigned long boosted_cpu_util(int cpu);
 #define TARGET_LOAD_1_BIGC 			40
 #define TARGET_LOAD_2_BIGC 			90
 
-#define HXGOV_KTHREAD_PRIORITY			25 // 25
+#define HXGOV_KTHREAD_PRIORITY			70 // 25
 
 struct hxgov_tunables {
 	struct gov_attr_set attr_set;
@@ -215,6 +215,8 @@ static unsigned int get_next_freq(struct hxgov_cpu *sg_cpu, unsigned long util,
 	} else {
 		freq = (freq - (freq >> tunables->bit_shift2)) * util / max;
 	}
+
+	trace_hxgov_next_freq(policy->cpu, util, max, freq);
 
 	if (freq == sg_cpu->cached_raw_freq && sg_policy->next_freq != UINT_MAX)
 		return sg_policy->next_freq;
