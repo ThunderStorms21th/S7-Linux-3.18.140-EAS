@@ -29,6 +29,10 @@ extern atomic_long_t calc_load_tasks;
 extern void calc_global_load_tick(struct rq *this_rq);
 extern long calc_load_fold_active(struct rq *this_rq, long adjust);
 
+#ifdef CONFIG_SCHED_WALT
+extern unsigned int sched_ravg_window;
+#endif /* CONFIG_SCHED_WALT */
+
 #ifdef CONFIG_SMP
 extern void update_cpu_load_active(struct rq *this_rq);
 extern void check_for_migration(struct rq *rq, struct task_struct *p);
