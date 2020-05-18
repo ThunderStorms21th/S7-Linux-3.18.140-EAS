@@ -10045,9 +10045,10 @@ kick_active_balance(struct rq *rq, struct task_struct *p, int new_cpu)
 
 void check_for_migration(struct rq *rq, struct task_struct *p)
 {
-	int new_cpu;
+	int new_cpu = -1;
 	int active_balance;
-	int cpu = task_cpu(p);
+	int prev_cpu = task_cpu(p);
+	int cpu = smp_processor_id();
 
 	if (rq->misfit_task) {
 		if (rq->curr->state != TASK_RUNNING ||
@@ -10055,8 +10056,10 @@ void check_for_migration(struct rq *rq, struct task_struct *p)
 			return;
 
 		new_cpu = select_energy_cpu_brute(p, cpu, 0);
-		if (capacity_orig_of(new_cpu) > capacity_orig_of(cpu)) {
-			active_balance = kick_active_balance(rq, p, new_cpu);
+
+		if ((new_cpu != -1) && (new_cpu != prev_cpu) &&
+		    (capacity_orig_of(new_cpu) > capacity_orig_of(prev_cpu))) {
+		    	active_balance = kick_active_balance(rq, p, new_cpu);
 			if (active_balance)
 				stop_one_cpu_nowait(cpu,
 						active_load_balance_cpu_stop,
