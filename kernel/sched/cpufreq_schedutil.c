@@ -24,6 +24,7 @@
 #include <trace/events/power.h>
 #include <linux/cpu_pm.h>
 #include <linux/of.h>
+#include <linux/binfmts.h>
 
 #include "sched.h"
 #include "tune.h"
@@ -613,6 +614,10 @@ static ssize_t up_rate_limit_us_store(struct gov_attr_set *attr_set,
 	struct sugov_policy *sg_policy;
 	unsigned int rate_limit_us;
 
+	/* Apply init protection, else values will get overwritten */
+	if (task_is_booster(current))
+		return count;
+
 	if (kstrtouint(buf, 10, &rate_limit_us))
 		return -EINVAL;
 
@@ -632,6 +637,10 @@ static ssize_t down_rate_limit_us_store(struct gov_attr_set *attr_set,
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
 	struct sugov_policy *sg_policy;
 	unsigned int rate_limit_us;
+
+	/* Apply init protection, else values will get overwritten */
+	if (task_is_booster(current))
+		return count;
 
 	if (kstrtouint(buf, 10, &rate_limit_us))
 		return -EINVAL;
