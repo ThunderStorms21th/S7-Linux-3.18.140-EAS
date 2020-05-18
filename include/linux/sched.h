@@ -3474,6 +3474,7 @@ int register_cpu_cycle_counter_cb(struct cpu_cycle_counter_cb *cb);
 #define SCHED_CPUFREQ_INTERCLUSTER_MIG (1U << 3)
 #define SCHED_CPUFREQ_IDLE	    (1U << 3)
 #define SCHED_CPUFREQ_PL    (1U << 5)
+#define SCHED_CPUFREQ_CONTINUE (1U << 8)
 
 #define SCHED_CPUFREQ_RT_DL (SCHED_CPUFREQ_RT | SCHED_CPUFREQ_DL)
 
