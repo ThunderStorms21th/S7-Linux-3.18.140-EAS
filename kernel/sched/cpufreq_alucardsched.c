@@ -39,20 +39,20 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define ACGOV_KTHREAD_PRIORITY	25			// 50
+#define ACGOV_KTHREAD_PRIORITY		50		// 50
 
-#define UP_RATE_LIMIT_US_LC		(30000)
-#define UP_RATE_LIMIT_US_BIGC		(100000)
-#define DOWN_RATE_LIMIT_US_LC		(40000)
-#define DOWN_RATE_LIMIT_US_BIGC		(50000)
+#define UP_RATE_LIMIT_US_LC		(60000)
+#define UP_RATE_LIMIT_US_BIGC		(500000)
+#define DOWN_RATE_LIMIT_US_LC		(30000)
+#define DOWN_RATE_LIMIT_US_BIGC		(40000)
 #define FREQ_RESPONSIVENESS_LC		1066000
 #define FREQ_RESPONSIVENESS_BC		1040000
-#define PUMP_INC_STEP_AT_MIN_FREQ	6
+#define PUMP_INC_STEP_AT_MIN_FREQ	4
 #define PUMP_INC_STEP			3
 #define PUMP_DEC_STEP_AT_MIN_FREQ	3
 #define PUMP_DEC_STEP			1
-#define BOOST_PERC			10
-#define LATENCY_MULTIPLIER		(5000)		// 2000
+#define BOOST_PERC			5		// 10
+#define LATENCY_MULTIPLIER		(1000)		// 2000
 #define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(30000 * NSEC_PER_USEC))
 
 struct acgov_tunables {
@@ -112,8 +112,8 @@ struct acgov_cpu {
 static DEFINE_PER_CPU(struct acgov_cpu, acgov_cpu);
 static DEFINE_PER_CPU(struct acgov_tunables, cached_tunables);
 
-#define LITTLE_NFREQS				13
-#define BIG_NFREQS				21
+#define LITTLE_NFREQS				14
+#define BIG_NFREQS				22
 static unsigned long little_capacity[LITTLE_NFREQS][2] = {
 	{0, 29},
 	{42, 55},

@@ -37,12 +37,12 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define LATENCY_MULTIPLIER_BC_UP		(1000)
-#define LATENCY_MULTIPLIER_BC_DOWN		(300)
-#define LATENCY_MULTIPLIER_LC_UP		(300)
-#define LATENCY_MULTIPLIER_LC_DOWN		(400)
-#define SUGOV_KTHREAD_PRIORITY	25			// 50
-#define CPUFREQ_TRANSITION_DELAY		1000	// 500
+#define LATENCY_MULTIPLIER_BC_UP		(5000)
+#define LATENCY_MULTIPLIER_BC_DOWN		(400)
+#define LATENCY_MULTIPLIER_LC_UP		(600)
+#define LATENCY_MULTIPLIER_LC_DOWN		(300)
+#define SUGOV_KTHREAD_PRIORITY			50	// 50
+#define CPUFREQ_TRANSITION_DELAY		500	// 500
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;
@@ -614,10 +614,6 @@ static ssize_t up_rate_limit_us_store(struct gov_attr_set *attr_set,
 	struct sugov_policy *sg_policy;
 	unsigned int rate_limit_us;
 
-	/* Apply init protection, else values will get overwritten */
-	if (task_is_booster(current))
-		return count;
-
 	if (kstrtouint(buf, 10, &rate_limit_us))
 		return -EINVAL;
 
@@ -637,10 +633,6 @@ static ssize_t down_rate_limit_us_store(struct gov_attr_set *attr_set,
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
 	struct sugov_policy *sg_policy;
 	unsigned int rate_limit_us;
-
-	/* Apply init protection, else values will get overwritten */
-	if (task_is_booster(current))
-		return count;
 
 	if (kstrtouint(buf, 10, &rate_limit_us))
 		return -EINVAL;

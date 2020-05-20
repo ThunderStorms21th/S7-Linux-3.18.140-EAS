@@ -36,11 +36,15 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define LATENCY_MULTIPLIER_UP			(1000)
-#define LATENCY_MULTIPLIER_DOWN			(500)
-#define EUGOV_KTHREAD_PRIORITY			25	// 50
-#define DEFAULT_SUSPEND_MAX_FREQ_SILVER 	800000
-#define DEFAULT_SUSPEND_MAX_FREQ_GOLD 		600000
+#define LATENCY_MULTIPLIER_UP_LC		(600)
+#define LATENCY_MULTIPLIER_DOWN_LC		(300)
+#define LATENCY_MULTIPLIER_UP_BC		(5000)
+#define LATENCY_MULTIPLIER_DOWN_BC		(400)
+#define EUGOV_KTHREAD_PRIORITY			50	// 50
+#define DEFAULT_SUSPEND_MAX_FREQ_SILVER_LC 	754000
+#define DEFAULT_SUSPEND_MAX_FREQ_GOLD_LC	650000
+#define DEFAULT_SUSPEND_MAX_FREQ_SILVER_BC 	728000
+#define DEFAULT_SUSPEND_MAX_FREQ_GOLD_BC	624000
 #define DEFAULT_SUSPEND_MAX_FREQ 		1200000
 #define DEFAULT_SUSPEND_CAPACITY_FACTOR 	10
 
@@ -833,9 +837,14 @@ static int eugov_init(struct cpufreq_policy *policy)
 		tunables->down_rate_limit_us = policy->down_transition_delay_us;
 	} else {
 		unsigned int lat;
-
-		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP;
-                tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN;
+		if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
+		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP_BC;
+                tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN_BC;
+                }
+  		if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
+  		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP_LC;
+                tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN_LC;
+                }             
                 
 		lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 		if (lat) {
@@ -846,8 +855,14 @@ static int eugov_init(struct cpufreq_policy *policy)
 
 	tunables->iowait_boost_enable = policy->iowait_boost_enable;
 
-	tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER;
-	tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD;
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
+	tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER_BC;
+	tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD_BC;
+	}
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
+	tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER_LC;
+	tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD_LC;
+	}
 		
 	tunables->suspend_capacity_factor = DEFAULT_SUSPEND_CAPACITY_FACTOR;
 

@@ -9,6 +9,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -20,29 +27,37 @@
 #include "sched.h"
 #include "tune.h"
 
-#define RATE_LIMIT				1000
+#define RATE_LIMIT				2000
 
-#define BIT_SHIFT_1 				9
-#define BIT_SHIFT_2 				9
-#define TARGET_LOAD_1				32
-#define TARGET_LOAD_2				73
+#define BIT_SHIFT_1 				6	// 9
+#define BIT_SHIFT_2 				8	// 9
+#define TARGET_LOAD_1				30
+#define TARGET_LOAD_2				75
 
-#define BIT_SHIFT_1_BIGC 			10
+#define BIT_SHIFT_1_BIGC 			4
 #define BIT_SHIFT_2_BIGC 			6
-#define TARGET_LOAD_1_BIGC 			24
-#define TARGET_LOAD_2_BIGC 			71
+#define TARGET_LOAD_1_BIGC 			25
+#define TARGET_LOAD_2_BIGC 			70
 
-#define LATENCY_MULTIPLIER			(50000)
+#define LATENCY_MULTIPLIER			(600)
+#define LATENCY_MULTIPLIER_BC			(1000)
+#define LATENCY_MULTIPLIER_UP_LC		(600)
+#define LATENCY_MULTIPLIER_UP_BC		(5000)
+#define LATENCY_MULTIPLIER_DOWN_LC		(300)
+#define LATENCY_MULTIPLIER_DOWN_BC		(400)
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 
-#define DEFAULT_SUSPEND_MAX_FREQ_SILVER 300000
-#define DEFAULT_SUSPEND_MAX_FREQ_GOLD 600000
-#define DEFAULT_HISPEED_FREQ 800000
+#define DEFAULT_SUSPEND_MAX_FREQ_SILVER		234000
+#define DEFAULT_SUSPEND_MAX_FREQ_GOLD		650000
+#define DEFAULT_HISPEED_FREQ			754000
+#define DEFAULT_SUSPEND_MAX_FREQ_SILVER_BC	416000
+#define DEFAULT_SUSPEND_MAX_FREQ_GOLD_BC	728000
+#define DEFAULT_HISPEED_FREQ_BC			832000
 #define DEFAULT_SUSPEND_CAPACITY_FACTOR 10
 
-#define SMUGOV_KTHREAD_PRIORITY	25
+#define SMUGOV_KTHREAD_PRIORITY			50	// 25
 
 
 struct smugov_tunables {
@@ -1157,25 +1172,32 @@ static int smugov_init(struct cpufreq_policy *policy)
 	}
 
 	tunables->pl = 1;
-	tunables->rate_limit_us = LATENCY_MULTIPLIER;
 	tunables->hispeed_load = DEFAULT_HISPEED_LOAD;
-	tunables->hispeed_freq = DEFAULT_HISPEED_FREQ;
-	tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER;
-	tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD;
+	// tunables->hispeed_freq = DEFAULT_HISPEED_FREQ;
+	// tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER;
+	// tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD;
 	tunables->suspend_capacity_factor = DEFAULT_SUSPEND_CAPACITY_FACTOR;
 
 	if (cpu < 4){
-		tunables->rate_limit_us = RATE_LIMIT;
+		// tunables->rate_limit_us = RATE_LIMIT;
 		tunables->bit_shift1 = BIT_SHIFT_1;
 		tunables->bit_shift2 = BIT_SHIFT_2;
 		tunables->target_load1 = TARGET_LOAD_1;
 		tunables->target_load2 = TARGET_LOAD_2;
+		tunables->rate_limit_us = LATENCY_MULTIPLIER;
+		tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER;
+		tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD;
+		tunables->hispeed_freq = DEFAULT_HISPEED_FREQ;
 	} else {
-		tunables->rate_limit_us = RATE_LIMIT;
+		// tunables->rate_limit_us = RATE_LIMIT;
 		tunables->bit_shift1 = BIT_SHIFT_1_BIGC;
 		tunables->bit_shift2 = BIT_SHIFT_2_BIGC;
 		tunables->target_load1 = TARGET_LOAD_1_BIGC;
 		tunables->target_load2 = TARGET_LOAD_2_BIGC;
+		tunables->rate_limit_us = LATENCY_MULTIPLIER_BC;
+		tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER_BC;
+		tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD_BC;
+		tunables->hispeed_freq = DEFAULT_HISPEED_FREQ_BC;
 	}
 
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
