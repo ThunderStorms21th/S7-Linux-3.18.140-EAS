@@ -36,9 +36,11 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define LATENCY_MULTIPLIER_UP			(1000)
-#define LATENCY_MULTIPLIER_DOWN			(500)
-#define SUGOV_KTHREAD_PRIORITY			25	// 50
+#define LATENCY_MULTIPLIER_UP_BC		(5000)
+#define LATENCY_MULTIPLIER_DOWN_BC		(400)
+#define LATENCY_MULTIPLIER_UP_LC		(600)
+#define LATENCY_MULTIPLIER_DOWN_LC		(300)
+#define SUGOV_KTHREAD_PRIORITY			50	// 50
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;
@@ -939,11 +941,22 @@ static int sugov_init(struct cpufreq_policy *policy)
 		ret = -ENOMEM;
 		goto stop_kthread;
 	}
+
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
+	tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP_BC;
+        tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN_BC;
+        tunables->hispeed_freq = 624000;
+        }
+  	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
+  	tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP_LC;
+        tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN_LC;
+        tunables->hispeed_freq = 650000;
+        } 
 		
-     	tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP;
-	tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN;
+/*     	tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP;
+	tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN; */
 	tunables->hispeed_load = DEFAULT_HISPEED_LOAD;
-	tunables->hispeed_freq = 650000;
+//	tunables->hispeed_freq = 650000;
 		
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {

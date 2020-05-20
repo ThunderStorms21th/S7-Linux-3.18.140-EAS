@@ -9,6 +9,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -22,9 +29,11 @@
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define SUGOV_KTHREAD_PRIORITY	50
-#define CONFIG_vladutil_DOWN_RATE_LIMIT	(50000)
-#define CONFIG_vladutil_UP_RATE_LIMIT	(100000)
+#define SUGOV_KTHREAD_PRIORITY			50	// 50
+#define CONFIG_vladutil_DOWN_RATE_LIMIT		(40000)
+#define CONFIG_vladutil_UP_RATE_LIMIT		(60000)
+#define CONFIG_vladutil_UP_RATE_LIMIT_BC	(500000)
+#define CONFIG_vladutil_DOWN_RATE_LIMIT_BC	(40000)
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;
@@ -772,10 +781,20 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	tunables->up_rate_limit_us =
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
+	tunables->up_rate_limit_us = CONFIG_vladutil_UP_RATE_LIMIT_BC;
+        tunables->down_rate_limit_us = CONFIG_vladutil_DOWN_RATE_LIMIT_BC;
+        }
+        
+  	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
+  	tunables->up_rate_limit_us = CONFIG_vladutil_UP_RATE_LIMIT;
+        tunables->down_rate_limit_us = CONFIG_vladutil_DOWN_RATE_LIMIT;
+        } 
+
+/*	tunables->up_rate_limit_us =
 				CONFIG_vladutil_UP_RATE_LIMIT;
 	tunables->down_rate_limit_us =
-				CONFIG_vladutil_DOWN_RATE_LIMIT;
+				CONFIG_vladutil_DOWN_RATE_LIMIT; */
 
 	tunables->iowait_boost_enable = true;
 	policy->governor_data = sg_policy;

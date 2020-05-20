@@ -9,6 +9,13 @@
  * published by the Free Software Foundation.
  */
 
+/* Edited by XDA@nalas ThunderStorms21th Team in 2020
+ * Modded for add support 2 clusters CPUs big.LITTLE
+ * Samsung Exynoss 8890 for Galaxy S7
+ * big core 	= 4 - 7
+ * LITTLE core	= 0 - 3
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
@@ -25,7 +32,13 @@
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define SUGOV_KTHREAD_PRIORITY	50
+#define LATENCY_MULTIPLIER_UP_LC		(600)
+#define LATENCY_MULTIPLIER_UP_BC		(5000)
+#define LATENCY_MULTIPLIER_DOWN_LC		(300)
+#define LATENCY_MULTIPLIER_DOWN_BC		(400)
+#define DEFAULT_HISPEED_FREQ			650000	// 0
+#define DEFAULT_HISPEED_FREQ_BC			624000	// 0
+#define SUGOV_KTHREAD_PRIORITY			50	// 50
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;
@@ -360,7 +373,7 @@ static void sugov_calc_avg_cap(struct sugov_policy *sg_policy, u64 curr_ws,
 }
 
 #define NL_RATIO 75
-#define DEFAULT_HISPEED_LOAD 90
+#define DEFAULT_HISPEED_LOAD 95
 static void sugov_walt_adjust(struct sugov_cpu *sg_cpu, unsigned long *util,
 			      unsigned long *max)
 {
@@ -1001,11 +1014,22 @@ static int sugov_init(struct cpufreq_policy *policy)
 		ret = -ENOMEM;
 		goto stop_kthread;
 	}
+	/* Set LATENCY_MULTIPLER and HISPEED FREQ depends on cluster LITTLE.big  - XDA@nalas */
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
+	tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP_BC;
+        tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN_BC;
+        tunables->hispeed_freq = DEFAULT_HISPEED_FREQ_BC;
+        }
+  	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
+  	tunables->up_rate_limit_us = LATENCY_MULTIPLIER_UP_LC;
+        tunables->down_rate_limit_us = LATENCY_MULTIPLIER_DOWN_LC;
+        tunables->hispeed_freq = DEFAULT_HISPEED_FREQ;
+        }  
 
-	tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
-	tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
+	// tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
+	// tunables->down_rate_limit_us = LATENCY_MULTIPLIER - 500;
 	tunables->hispeed_load = DEFAULT_HISPEED_LOAD;
-	tunables->hispeed_freq = 0;
+	// tunables->hispeed_freq = DEFAULT_HISPEED_FREQ;
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {
 		tunables->up_rate_limit_us *= lat;
