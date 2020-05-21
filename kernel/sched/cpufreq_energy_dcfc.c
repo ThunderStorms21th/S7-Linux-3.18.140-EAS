@@ -55,7 +55,7 @@ unsigned long boosted_cpu_util(int cpu);
 #define TARGET_LOAD_1_BIGC 			25	// 15
 #define TARGET_LOAD_2_BIGC 			60	// 50
 
-#define NRGGOV_KTHREAD_PRIORITY			50	// 25
+#define NRGGOV_KTHREAD_PRIORITY			25	// 25
 
 struct nrggov_tunables {
 	struct gov_attr_set attr_set;
@@ -1065,6 +1065,7 @@ static int cpufreq_energy_dcfc_cb(struct cpufreq_policy *policy,
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_ENERGY
 static
 #endif
+
 struct cpufreq_governor cpufreq_gov_energy_dcfc = {
 	.name = "energy-dcfc",
 	.governor = cpufreq_energy_dcfc_cb,

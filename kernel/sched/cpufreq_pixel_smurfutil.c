@@ -56,7 +56,7 @@
 #define LATENCY_MULTIPLIER_UP_BC		(500000)
 #define LATENCY_MULTIPLIER_DOWN_LC		(30000)
 #define LATENCY_MULTIPLIER_DOWN_BC		(40000)
-#define SMUGOV_KTHREAD_PRIORITY			50	// 50
+#define SMUGOV_KTHREAD_PRIORITY			25	// 50
 
 struct smugov_tunables {
 	struct gov_attr_set attr_set;

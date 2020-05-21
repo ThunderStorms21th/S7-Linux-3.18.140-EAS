@@ -41,7 +41,7 @@ unsigned long boosted_cpu_util(int cpu);
 #define LATENCY_MULTIPLIER_BC_DOWN		(400)
 #define LATENCY_MULTIPLIER_LC_UP		(600)
 #define LATENCY_MULTIPLIER_LC_DOWN		(300)
-#define SUGOV_KTHREAD_PRIORITY			50	// 50
+#define SUGOV_KTHREAD_PRIORITY			25	// 50
 #define CPUFREQ_TRANSITION_DELAY		500	// 500
 
 struct sugov_tunables {

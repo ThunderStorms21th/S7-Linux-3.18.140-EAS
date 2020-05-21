@@ -39,7 +39,7 @@ unsigned long boosted_cpu_util(int cpu);
 #define LATENCY_MULTIPLIER_BC_DOWN		(400)
 #define LATENCY_MULTIPLIER_LC_UP		(600)
 #define LATENCY_MULTIPLIER_LC_DOWN		(300)
-#define PWRGOV_KTHREAD_PRIORITY			50	// 25
+#define PWRGOV_KTHREAD_PRIORITY			25	// 25
 
 struct pwrgov_tunables {
     struct gov_attr_set attr_set;
