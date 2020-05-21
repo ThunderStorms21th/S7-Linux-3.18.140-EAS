@@ -31,7 +31,6 @@
 #include <linux/display_state.h>
 
 #ifdef CONFIG_SCHED_WALT
-unsigned long boosted_cpu_util(int cpu);
 #endif
 
 /* Stub out fast switch routines present on mainline to reduce the backport
@@ -39,14 +38,17 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
+#undef LATENCY_MULTIPLIER
+#define LATENCY_MULTIPLIER			(2000)
 #define LATENCY_MULTIPLIER_LC_UP		(600)	// 2000
 #define LATENCY_MULTIPLIER_BC_UP		(5000)	// 2000
 #define LATENCY_MULTIPLIER_LC_DOWN		(300)	// 2000
 #define LATENCY_MULTIPLIER_BC_DOWN		(400)	// 2000
-#define DKGOV_KTHREAD_PRIORITY			50	// 50
+#define DKGOV_KTHREAD_PRIORITY	50			// 50
 
-#define BOOST_PERC				5
-#define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(30000 * NSEC_PER_USEC))
+#define BOOST_PERC					15
+#define BOOST_PERC_BC					5
+#define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(80000 * NSEC_PER_USEC))
 
 struct dkgov_tunables {
 	struct gov_attr_set attr_set;
@@ -102,7 +104,7 @@ static DEFINE_PER_CPU(struct dkgov_cpu, dkgov_cpu);
 static DEFINE_PER_CPU(struct dkgov_tunables, cached_tunables);
 
 #define LITTLE_NFREQS				14
-#define BIG_NFREQS				22
+#define BIG_NFREQS					22
 static unsigned long little_capacity[LITTLE_NFREQS] = {
 	0,
 	42,
@@ -117,7 +119,7 @@ static unsigned long little_capacity[LITTLE_NFREQS] = {
 	159,
 	172,
 	185,
-	198
+	198	
 };
 
 static unsigned long big_capacity[BIG_NFREQS] = {
@@ -324,7 +326,6 @@ static void dkgov_get_util(unsigned long *util, unsigned long *max, u64 time)
 	*util = min(rq->cfs.avg.util_avg + rt, max_cap);
 #ifdef CONFIG_SCHED_WALT
 	if (!walt_disabled && sysctl_sched_use_walt_cpu_util)
-		*util = boosted_cpu_util(cpu);
 #endif
 	*max = max_cap;
 }
@@ -677,7 +678,7 @@ static int dkgov_kthread_create(struct dkgov_policy *sg_policy)
 	sg_policy->thread = thread;
 	kthread_bind_mask(thread, policy->related_cpus);
 	/* NB: wake up so the thread does not look hung to the freezer */
-	wake_up_process_no_notif(thread);
+	wake_up_process(thread);
 
 	return 0;
 }
@@ -748,16 +749,18 @@ static void get_tunables_data(struct dkgov_tunables *tunables,
 	}
 
 initialize:
-/* 	tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
-	tunables->down_rate_limit_us = LATENCY_MULTIPLIER;	*/
+	// tunables->up_rate_limit_us = LATENCY_MULTIPLIER;
+	// tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
 	
 	/* Set LATENCY_MULTIPLER depends on cluster LITTLE.big  - XDA@nalas */
 	if (cpu < 4){
 		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_LC_UP;
 		tunables->down_rate_limit_us = LATENCY_MULTIPLIER_LC_DOWN;
+		tunables->boost_perc = BOOST_PERC;
 	} else {
 		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_BC_UP;
 		tunables->down_rate_limit_us = LATENCY_MULTIPLIER_BC_DOWN;
+		tunables->boost_perc = BOOST_PERC_BC;
 	}
 	
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
@@ -765,7 +768,7 @@ initialize:
 		tunables->up_rate_limit_us *= lat;
 		tunables->down_rate_limit_us *= lat;
 	}
-	tunables->boost_perc = BOOST_PERC;
+	// tunables->boost_perc = BOOST_PERC;
 	pr_debug("tunables data initialized for cpu[%u]\n", cpu);
 out:
 	return;
@@ -860,8 +863,6 @@ static int dkgov_exit(struct cpufreq_policy *policy)
 
 	dkgov_kthread_stop(sg_policy);
 	dkgov_policy_free(sg_policy);
-
-	return 0;
 }
 
 static int dkgov_start(struct cpufreq_policy *policy)
@@ -916,8 +917,6 @@ static int dkgov_stop(struct cpufreq_policy *policy)
 
 	irq_work_sync(&sg_policy->irq_work);
 	kthread_cancel_work_sync(&sg_policy->work);
-
-	return 0;
 }
 
 static int dkgov_limits(struct cpufreq_policy *policy)
@@ -931,8 +930,6 @@ static int dkgov_limits(struct cpufreq_policy *policy)
 	}
 
 	sg_policy->need_freq_update = true;
-
-	return 0;
 }
 
 static int cpufreq_darknesssched_cb(struct cpufreq_policy *policy,
@@ -953,11 +950,25 @@ static int cpufreq_darknesssched_cb(struct cpufreq_policy *policy,
 		BUG();
 	}
 }
+/*
+static struct cpufreq_governor darknesssched_gov = {
+	.name = "darknesssched",
+	.owner = THIS_MODULE,
+	.init = dkgov_init,
+	.exit = dkgov_exit,
+	.start = dkgov_start,
+	.stop = dkgov_stop,
+	.limits = dkgov_limits,
+}; */
 
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_DARKNESSSCHED
-static
+#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_DARKNESSSCHED
+struct cpufreq_governor *cpufreq_default_governor(void)
+{
+	return &darknesssched_gov;
+}
 #endif
-struct cpufreq_governor darknesssched_gov = {
+
+static struct cpufreq_governor darknesssched_gov = {
 	.name = "darknesssched",
 	.governor = cpufreq_darknesssched_cb,
 	.owner = THIS_MODULE,
