@@ -28,10 +28,8 @@
 
 #include "sched.h"
 #include "tune.h"
-#include <linux/display_state.h>
-
-#ifdef CONFIG_SCHED_WALT
-unsigned long boosted_cpu_util(int cpu);
+#ifdef CONFIG_STATE_NOTIFIER
+#include <linux/state_notifier.h>
 #endif
 
 /* Stub out fast switch routines present on mainline to reduce the backport
@@ -39,21 +37,40 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define ACGOV_KTHREAD_PRIORITY		50		// 50
+#define ACGOV_KTHREAD_PRIORITY	50
 
-#define UP_RATE_LIMIT_US_LC		(60000)
-#define UP_RATE_LIMIT_US_BIGC		(500000)
-#define DOWN_RATE_LIMIT_US_LC		(30000)
-#define DOWN_RATE_LIMIT_US_BIGC		(40000)
-#define FREQ_RESPONSIVENESS_LC		1066000
-#define FREQ_RESPONSIVENESS_BC		1040000
-#define PUMP_INC_STEP_AT_MIN_FREQ	4
-#define PUMP_INC_STEP			3
+#ifdef CONFIG_ARCH_DUMMY
+#define UP_RATE_LIMIT_US_LC			(30000)
+#define UP_RATE_LIMIT_US_BIGC		(300000)
+#define DOWN_RATE_LIMIT_US_LC			(20000)
+#define DOWN_RATE_LIMIT_US_BIGC		(20000)
+#define FREQ_RESPONSIVENESS_LC			1066000
+#define FREQ_RESPONSIVENESS_BC			1040000
+#define PUMP_INC_STEP_AT_MIN_FREQ	6
+#define PUMP_INC_STEP				3
 #define PUMP_DEC_STEP_AT_MIN_FREQ	3
-#define PUMP_DEC_STEP			1
-#define BOOST_PERC			5		// 10
-#define LATENCY_MULTIPLIER		(1000)		// 2000
-#define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(30000 * NSEC_PER_USEC))
+#define PUMP_DEC_STEP				1
+#define BOOST_PERC					10
+#define BOOST_PERC_BC			5			// 10
+#else
+#define UP_RATE_LIMIT_US_LC			(30000)
+#define UP_RATE_LIMIT_US_BIGC		(300000)
+#define DOWN_RATE_LIMIT_US_LC			(20000)
+#define DOWN_RATE_LIMIT_US_BIGC		(20000)
+#define FREQ_RESPONSIVENESS_LC			1066000
+#define FREQ_RESPONSIVENESS_BC			1040000
+#define FREQ_RESPONSIVENESS_LC			1066000
+#define FREQ_RESPONSIVENESS_BC			1040000
+#define PUMP_INC_STEP_AT_MIN_FREQ	1
+#define PUMP_INC_STEP				1
+#define PUMP_DEC_STEP_AT_MIN_FREQ	1
+#define PUMP_DEC_STEP				1
+#define BOOST_PERC					10
+#define BOOST_PERC_BC			5			// 10
+#endif
+#ifdef CONFIG_STATE_NOTIFIER
+#define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(80000 * NSEC_PER_USEC))
+#endif
 
 struct acgov_tunables {
 	struct gov_attr_set attr_set;
@@ -81,8 +98,10 @@ struct acgov_policy {
 	s64 min_rate_limit_ns;
 	s64 up_rate_delay_ns;
 	s64 down_rate_delay_ns;
+#ifdef CONFIG_STATE_NOTIFIER
 	s64 up_rate_delay_prev_ns;
 	s64 down_rate_delay_prev_ns;
+#endif
 	unsigned int next_freq;
 
 	/* The next fields are only needed if fast switch cannot be used. */
@@ -92,6 +111,7 @@ struct acgov_policy {
 	struct kthread_worker worker;
 	struct task_struct *thread;
 	bool work_in_progress;
+
 	bool need_freq_update;
 };
 
@@ -103,6 +123,8 @@ struct acgov_cpu {
 	unsigned long iowait_boost_max;
 	u64 last_update;
 
+	struct sched_walt_cpu_load walt_load;
+
 	/* The fields below are only needed when sharing a policy. */
 	unsigned long util;
 	unsigned long max;
@@ -112,8 +134,9 @@ struct acgov_cpu {
 static DEFINE_PER_CPU(struct acgov_cpu, acgov_cpu);
 static DEFINE_PER_CPU(struct acgov_tunables, cached_tunables);
 
+#ifdef CONFIG_ARCH_DUMMY
 #define LITTLE_NFREQS				14
-#define BIG_NFREQS				22
+#define BIG_NFREQS					22
 static unsigned long little_capacity[LITTLE_NFREQS][2] = {
 	{0, 29},
 	{42, 55},
@@ -153,6 +176,7 @@ static unsigned long big_capacity[BIG_NFREQS][2] = {
 	{942, 983},
 	{983, 1024}
 };
+#endif
 
 /************************ Governor internals ***********************/
 
@@ -182,18 +206,16 @@ static bool acgov_should_update_freq(struct acgov_policy *sg_policy, u64 time)
 static bool acgov_up_down_rate_limit(struct acgov_policy *sg_policy, u64 time,
 				     unsigned int next_freq)
 {
-	/* Create display state boolean */
-	const bool display_on = is_display_on();
 	s64 delta_ns;
 
 	delta_ns = time - sg_policy->last_freq_update_time;
-	
-	if (!display_on) {
+#ifdef CONFIG_STATE_NOTIFIER
+	if (!state_suspended) {
 		if (sg_policy->up_rate_delay_ns != sg_policy->up_rate_delay_prev_ns)
 			sg_policy->up_rate_delay_ns = sg_policy->up_rate_delay_prev_ns;
 		if (sg_policy->down_rate_delay_ns != sg_policy->down_rate_delay_prev_ns)
 			sg_policy->down_rate_delay_ns = sg_policy->down_rate_delay_prev_ns;
-	} else if (display_on) {
+	} else if (state_suspended) {
 		if (sg_policy->up_rate_delay_ns != DEFAULT_RATE_LIMIT_SUSP_NS) {
 			sg_policy->up_rate_delay_prev_ns = sg_policy->up_rate_delay_ns;
 			sg_policy->up_rate_delay_ns
@@ -207,7 +229,7 @@ static bool acgov_up_down_rate_limit(struct acgov_policy *sg_policy, u64 time,
 					DEFAULT_RATE_LIMIT_SUSP_NS);
 		}
 	}
-
+#endif
 	if (next_freq > sg_policy->next_freq &&
 	    delta_ns < sg_policy->up_rate_delay_ns)
 			return true;
@@ -286,6 +308,7 @@ static unsigned int resolve_target_freq(struct cpufreq_policy *policy,
 	return target_freq;
 }
 
+#ifdef CONFIG_ARCH_DUMMY
 static void get_target_capacity(unsigned int cpu, int index,
 					unsigned long *down_cap, unsigned long *up_cap)
 {
@@ -297,6 +320,26 @@ static void get_target_capacity(unsigned int cpu, int index,
 		*up_cap = big_capacity[index][1];
 	}
 }
+#else
+static void get_target_load(struct cpufreq_policy *policy, int index,
+					unsigned int *down_load, unsigned int *up_load)
+{
+	struct cpufreq_frequency_table *table;
+	int i = 0;
+
+	if (!policy)
+		return;
+
+	table = policy->freq_table;
+	for (i = (index - 1); i >= 0; i--) {
+		if (table[i].frequency != CPUFREQ_ENTRY_INVALID) {
+			*down_load = clamp_val((table[i].frequency * 100) / policy->max, 0, 100);
+			break;
+		}
+	}
+	*up_load = clamp_val((policy->cur * 100) / policy->max, 0, 100);
+}
+#endif
 
 /**
  * get_next_freq - Compute a new frequency for a given cpufreq policy.
@@ -318,9 +361,15 @@ static unsigned int get_next_freq(struct acgov_cpu *sg_cpu, unsigned long util,
 	int pump_inc_step = tunables->pump_inc_step;
 	int pump_dec_step = tunables->pump_dec_step;
 	unsigned int next_freq = 0;
+#ifdef CONFIG_ARCH_DUMMY
 	unsigned long down_cap = 0, up_cap = 0;
 	unsigned long cur_util =
 			util + ((util * tunables->boost_perc) / 100);
+#else
+	unsigned int up_load = 0, down_load = 0;
+	unsigned int cur_load =
+		(util * (100 + tunables->boost_perc)) / max;
+#endif
 	int index;
 
 #ifdef CONFIG_MSM_TRACK_FREQ_TARGET_INDEX
@@ -334,6 +383,7 @@ static unsigned int get_next_freq(struct acgov_cpu *sg_cpu, unsigned long util,
 		pump_inc_step = tunables->pump_inc_step_at_min_freq;
 		pump_dec_step = tunables->pump_dec_step_at_min_freq;
 	}
+#ifdef CONFIG_ARCH_DUMMY
 	get_target_capacity(policy->cpu, index, &down_cap, &up_cap);
 	if (cur_util >= up_cap
 		&& policy->cur < policy->max) {
@@ -344,6 +394,18 @@ static unsigned int get_next_freq(struct acgov_cpu *sg_cpu, unsigned long util,
 		next_freq = resolve_target_freq(policy,
 			index, pump_dec_step, false);
 	}
+#else
+	get_target_load(policy, index, &down_load, &up_load);
+	if (cur_load >= up_load
+		&& policy->cur < policy->max) {
+		next_freq = resolve_target_freq(policy,
+			index, pump_inc_step, true);
+	} else if (cur_load < down_load
+		&& policy->cur > policy->min) {
+		next_freq = resolve_target_freq(policy,
+			index, pump_dec_step, false);
+	}
+#endif
 #ifndef CONFIG_MSM_TRACK_FREQ_TARGET_INDEX
 skip:
 #endif
@@ -362,6 +424,7 @@ static void acgov_get_util(unsigned long *util, unsigned long *max, u64 time)
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long max_cap, rt;
 	s64 delta;
+	struct acgov_cpu *loadcpu = &per_cpu(acgov_cpu, cpu);
 
 	max_cap = arch_scale_cpu_capacity(NULL, cpu);
 
@@ -375,7 +438,7 @@ static void acgov_get_util(unsigned long *util, unsigned long *max, u64 time)
 	*util = min(rq->cfs.avg.util_avg + rt, max_cap);
 #ifdef CONFIG_SCHED_WALT
 	if (!walt_disabled && sysctl_sched_use_walt_cpu_util)
-		*util = boosted_cpu_util(cpu);
+		*util = boosted_cpu_util(cpu, &loadcpu->walt_load);
 #endif
 	*max = max_cap;
 }
@@ -647,7 +710,9 @@ static ssize_t up_rate_limit_us_store(struct gov_attr_set *attr_set,
 
 	list_for_each_entry(sg_policy, &attr_set->policy_list, tunables_hook) {
 		sg_policy->up_rate_delay_ns = rate_limit_us * NSEC_PER_USEC;
+#ifdef CONFIG_STATE_NOTIFIER
 		sg_policy->up_rate_delay_prev_ns = rate_limit_us * NSEC_PER_USEC;
+#endif
 		update_min_rate_limit_us(sg_policy);
 	}
 
@@ -669,7 +734,9 @@ static ssize_t down_rate_limit_us_store(struct gov_attr_set *attr_set,
 
 	list_for_each_entry(sg_policy, &attr_set->policy_list, tunables_hook) {
 		sg_policy->down_rate_delay_ns = rate_limit_us * NSEC_PER_USEC;
+#ifdef CONFIG_STATE_NOTIFIER
 		sg_policy->down_rate_delay_prev_ns = rate_limit_us * NSEC_PER_USEC;
+#endif
 		update_min_rate_limit_us(sg_policy);
 	}
 
@@ -784,7 +851,7 @@ static ssize_t boost_perc_store(struct gov_attr_set *attr_set,
 	if (kstrtouint(buf, 10, &input))
 		return -EINVAL;
 
-	input = min(max(1, input), 20);
+	input = min(max(0, input), 20);
 
 	if (input == tunables->boost_perc)
 		return count;
@@ -848,9 +915,7 @@ static void acgov_policy_free(struct acgov_policy *sg_policy)
 static int acgov_kthread_create(struct acgov_policy *sg_policy)
 {
 	struct task_struct *thread;
-	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
 	struct cpufreq_policy *policy = sg_policy->policy;
-	int ret;
 
 	/* kthread only required for slow path */
 	if (policy->fast_switch_enabled)
@@ -866,17 +931,12 @@ static int acgov_kthread_create(struct acgov_policy *sg_policy)
 		return PTR_ERR(thread);
 	}
 
-	ret = sched_setscheduler_nocheck(thread, SCHED_FIFO, &param);
-	if (ret) {
-		kthread_stop(thread);
-		pr_warn("%s: failed to set SCHED_FIFO\n", __func__);
-		return ret;
-	}
+
 
 	sg_policy->thread = thread;
 	kthread_bind_mask(thread, policy->related_cpus);
 	/* NB: wake up so the thread does not look hung to the freezer */
-	wake_up_process_no_notif(thread);
+	wake_up_process(thread);
 
 	return 0;
 }
@@ -957,6 +1017,7 @@ static void get_tunables_data(struct acgov_tunables *tunables,
 	}
 
 initialize:
+#ifdef CONFIG_ARCH_DUMMY
 	if (cpu < 4) {
 		tunables->up_rate_limit_us = UP_RATE_LIMIT_US_LC;
 		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US_LC;
@@ -966,6 +1027,15 @@ initialize:
 	}
 
 	// tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US;
+#else
+	if (cpu < 4) {
+		tunables->up_rate_limit_us = UP_RATE_LIMIT_US_LC;
+		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US_LC;
+	} else {
+		tunables->up_rate_limit_us = UP_RATE_LIMIT_US_BIGC;
+		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US_BIGC;
+	}
+#endif
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {
 		tunables->up_rate_limit_us *= lat;
@@ -975,14 +1045,16 @@ initialize:
 	// tunables->freq_responsiveness = FREQ_RESPONSIVENESS;
 	if (cpu < 4) {
 		tunables->up_rate_limit_us = FREQ_RESPONSIVENESS_LC;
+		tunables->boost_perc = BOOST_PERC;
 	} else {
 		tunables->up_rate_limit_us = FREQ_RESPONSIVENESS_BC;
+		tunables->boost_perc = BOOST_PERC_BC;
 	}
 	tunables->pump_inc_step_at_min_freq = PUMP_INC_STEP_AT_MIN_FREQ;
 	tunables->pump_dec_step_at_min_freq = PUMP_DEC_STEP_AT_MIN_FREQ;
 	tunables->pump_inc_step = PUMP_INC_STEP;
 	tunables->pump_dec_step = PUMP_DEC_STEP;
-	tunables->boost_perc = BOOST_PERC;
+	// tunables->boost_perc = BOOST_PERC;
 	pr_debug("tunables data initialized for cpu[%u]\n", cpu);
 out:
 	return;
@@ -1078,7 +1150,7 @@ static int acgov_exit(struct cpufreq_policy *policy)
 	acgov_kthread_stop(sg_policy);
 	acgov_policy_free(sg_policy);
 
-	return 0;
+	return;
 }
 
 static int acgov_start(struct cpufreq_policy *policy)
@@ -1090,10 +1162,12 @@ static int acgov_start(struct cpufreq_policy *policy)
 		sg_policy->tunables->up_rate_limit_us * NSEC_PER_USEC;
 	sg_policy->down_rate_delay_ns =
 		sg_policy->tunables->down_rate_limit_us * NSEC_PER_USEC;
+#ifdef CONFIG_STATE_NOTIFIER
 	sg_policy->up_rate_delay_prev_ns =
 		sg_policy->tunables->up_rate_limit_us * NSEC_PER_USEC;
 	sg_policy->down_rate_delay_prev_ns =
 		sg_policy->tunables->down_rate_limit_us * NSEC_PER_USEC;
+#endif
 	update_min_rate_limit_us(sg_policy);
 	sg_policy->last_freq_update_time = 0;
 	sg_policy->next_freq = UINT_MAX;
@@ -1134,7 +1208,7 @@ static int acgov_stop(struct cpufreq_policy *policy)
 	irq_work_sync(&sg_policy->irq_work);
 	kthread_cancel_work_sync(&sg_policy->work);
 
-	return 0;
+	return;
 }
 
 static int acgov_limits(struct cpufreq_policy *policy)
@@ -1149,7 +1223,7 @@ static int acgov_limits(struct cpufreq_policy *policy)
 
 	sg_policy->need_freq_update = true;
 
-	return 0;
+	return;
 }
 
 static int cpufreq_alucardsched_cb(struct cpufreq_policy *policy,
@@ -1171,10 +1245,25 @@ static int cpufreq_alucardsched_cb(struct cpufreq_policy *policy,
 	}
 }
 
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_ALUCARDSCHED
-static
-#endif
+/*
 struct cpufreq_governor alucardsched_gov = {
+	.name = "alucardsched",
+	.init = acgov_init,
+	.exit = acgov_exit,
+	.start = acgov_start,
+	.stop = acgov_stop,
+	.limits = acgov_limits,
+	.owner = THIS_MODULE,
+}; */
+
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_ALUCARDSCHED
+struct cpufreq_governor *cpufreq_default_governor(void)
+{
+	return &alucardsched_gov;
+}
+#endif
+
+static struct cpufreq_governor alucardsched_gov = {
 	.name = "alucardsched",
 	.governor = cpufreq_alucardsched_cb,
 	.owner = THIS_MODULE,
