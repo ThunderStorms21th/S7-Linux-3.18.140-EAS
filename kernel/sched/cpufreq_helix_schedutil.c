@@ -50,7 +50,7 @@ unsigned long boosted_cpu_util(int cpu);
 #define TARGET_LOAD_1_BIGC 			30
 #define TARGET_LOAD_2_BIGC 			70
 
-#define HXGOV_KTHREAD_PRIORITY			50	// 25
+#define HXGOV_KTHREAD_PRIORITY			25	// 25
 
 struct hxgov_tunables {
 	struct gov_attr_set attr_set;
@@ -1039,6 +1039,7 @@ static int cpufreq_helix_schedutil_cb(struct cpufreq_policy *policy,
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_HELIX
 static
 #endif
+
 struct cpufreq_governor cpufreq_gov_helix_schedutil = {
 	.name = "helix_schedutil",
 	.governor = cpufreq_helix_schedutil_cb,

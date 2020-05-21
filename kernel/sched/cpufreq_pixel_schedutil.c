@@ -38,7 +38,7 @@
 #define LATENCY_MULTIPLIER_DOWN_BC		(400)
 #define DEFAULT_HISPEED_FREQ			650000	// 0
 #define DEFAULT_HISPEED_FREQ_BC			624000	// 0
-#define SUGOV_KTHREAD_PRIORITY			50	// 50
+#define SUGOV_KTHREAD_PRIORITY			25	// 50
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;

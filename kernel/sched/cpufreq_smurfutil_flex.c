@@ -54,7 +54,7 @@
 #define DEFAULT_SUSPEND_MAX_FREQ_GOLD_BC	624000
 #define DEFAULT_HISPEED_FREQ_BC			728000
 
-#define SMUGOV_KTHREAD_PRIORITY			50	//50
+#define SMUGOV_KTHREAD_PRIORITY			25	//50
 
 struct smugov_tunables {
 	struct gov_attr_set attr_set;

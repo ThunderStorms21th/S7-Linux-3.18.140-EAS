@@ -1120,6 +1120,7 @@ static int cpufreq_blu_schedutil_cb(struct cpufreq_policy *policy,
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_BLU_SCHEDUTIL
 static
 #endif
+
 struct cpufreq_governor cpufreq_gov_blu_schedutil = {
     .name = "blu_schedutil",
     .governor = cpufreq_blu_schedutil_cb,

@@ -57,7 +57,7 @@
 #define DEFAULT_HISPEED_FREQ_BC			832000
 #define DEFAULT_SUSPEND_CAPACITY_FACTOR 10
 
-#define SMUGOV_KTHREAD_PRIORITY			50	// 25
+#define SMUGOV_KTHREAD_PRIORITY			25	// 25
 
 
 struct smugov_tunables {
