@@ -8320,7 +8320,7 @@ static inline void update_sg_lb_stats(struct lb_env *env,
 		sgs->group_weight = group->group_weight;
 
 		sgs->group_no_capacity = group_is_overloaded(env, sgs);
-		sgs->group_type = group_classify(group, sgs, env);
+		sgs->group_type = group_classify(env, group, sgs);
 	}
 
 	if (sgs->sum_nr_running)
