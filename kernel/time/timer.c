@@ -975,9 +975,6 @@ void add_timer_on(struct timer_list *timer, int cpu)
 	timer_stats_timer_set_start_info(timer);
 	BUG_ON(timer_pending(timer) || !timer->function);
 	timer_set_flags(timer, TIMER_PINNED);
-	spin_lock_irqsave(&base->lock, flags);
-	timer_set_base(timer, base);
-	debug_activate(timer, timer->expires);
 
 	/*
 	 * If @timer was on a different CPU, it should be migrated with the
