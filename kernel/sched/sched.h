@@ -41,6 +41,15 @@ static inline void update_cpu_load_active(struct rq *this_rq) { }
 static inline void check_for_migration(struct rq *rq, struct task_struct *p) { }
 #endif
 
+#ifdef CONFIG_SCHED_WALT
+extern unsigned int nr_eligible_big_tasks(int cpu);
+#else
+static inline unsigned int nr_eligible_big_tasks(int cpu)
+{
+	return 0;
+}
+#endif
+
 /*
  * Helpers for converting nanosecond timing to jiffy resolution
  */
@@ -1587,6 +1596,11 @@ static inline unsigned long capacity_of(int cpu)
 static inline unsigned long capacity_orig_of(int cpu)
 {
 	return cpu_rq(cpu)->cpu_capacity_orig;
+}
+
+static inline bool is_max_capacity_cpu(int cpu)
+{
+	return cpu_rq(cpu)->max_possible_capacity == 1024;
 }
 
 extern unsigned int sysctl_sched_use_walt_cpu_util;
