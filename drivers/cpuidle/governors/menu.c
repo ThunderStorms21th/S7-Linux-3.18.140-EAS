@@ -341,6 +341,10 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 
 		if (s->disabled || su->disable)
 			continue;
+		if (cpu_isolated(dev->cpu)) {
+			data->last_state_idx = i;
+			continue;
+		}
 		if (s->target_residency > data->predicted_us)
 			continue;
 		if (s->exit_latency > latency_req)
