@@ -1948,6 +1948,7 @@ void scheduler_ipi(void)
 	 * this IPI.
 	 */
 	preempt_fold_need_resched();
+	int cpu = smp_processor_id();
 
 	if (llist_empty(&this_rq()->wake_list) && !got_nohz_idle_kick())
 		return;
@@ -1971,7 +1972,7 @@ void scheduler_ipi(void)
 	/*
 	 * Check if someone kicked us for doing the nohz idle load balance.
 	 */
-	if (unlikely(got_nohz_idle_kick())) {
+	if (unlikely(got_nohz_idle_kick()) && !cpu_isolated(cpu)) {
 		this_rq()->idle_balance = 1;
 		raise_softirq_irqoff(SCHED_SOFTIRQ);
 	}
@@ -4665,6 +4666,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 	cpumask_var_t cpus_allowed, new_mask;
 	struct task_struct *p;
 	int retval;
+	cpumask_t allowed_mask, set_mask;
 
 	rcu_read_lock();
 
@@ -4726,7 +4728,13 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 	}
 #endif
 again:
-	retval = __set_cpus_allowed_ptr(p, new_mask, true);
+	cpumask_copy(&set_mask, new_mask);
+	cpumask_andnot(&allowed_mask, &set_mask, cpu_isolated_mask);
+	if (!cpumask_intersects(cpu_active_mask, &allowed_mask)) {
+		retval = -EINVAL;
+		goto out_free_new_mask;
+	}
+	retval = __set_cpus_allowed_ptr(p, &set_mask, true);
 
 	if (!retval) {
 		cpuset_cpus_allowed(p, cpus_allowed);

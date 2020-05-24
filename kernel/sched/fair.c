@@ -6101,6 +6101,10 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 	int load_idx = sd->forkexec_idx;
 	int imbalance = 100 + (sd->imbalance_pct-100)/2;
 
+	cpumask_t allowed_cpus;
+
+	cpumask_andnot(&allowed_cpus, tsk_cpus_allowed(p), cpu_isolated_mask);
+
 	if (sd_flag & SD_BALANCE_WAKE)
 		load_idx = sd->wake_idx;
 
@@ -6111,7 +6115,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 
 		/* Skip over this group if it has no CPUs allowed */
 		if (!cpumask_intersects(sched_group_cpus(group),
-					tsk_cpus_allowed(p)))
+					&allowed_cpus))
 			continue;
 
 		local_group = cpumask_test_cpu(this_cpu,
@@ -6243,6 +6247,7 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
 
 	schedstat_inc(p, se.statistics.nr_wakeups_sis_attempts);
 	schedstat_inc(this_rq(), eas_stats.sis_attempts);
+	struct cpumask allowed_cpus;
 
 	if (!sysctl_sched_cstate_aware) {
 		if (idle_cpu(target)) {
@@ -6279,6 +6284,7 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
 	/*
 	 * Otherwise, iterate the domains and find an elegible idle cpu.
 	 */
+	cpumask_andnot(&allowed_cpus, tsk_cpus_allowed(p), cpu_isolated_mask);
 	sd = rcu_dereference(per_cpu(sd_llc, target));
 	for_each_lower_domain(sd) {
 		sg = sd->groups;
@@ -6286,11 +6292,11 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
 			int i;
 
 			if (!cpumask_intersects(sched_group_cpus(sg),
-						tsk_cpus_allowed(p)))
+						&allowed_cpus))
 				goto next;
 
 			if (sysctl_sched_cstate_aware) {
-				for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg)) {
+				for_each_cpu_and(i, &allowed_cpus, sched_group_cpus(sg)) {
 					int idle_idx = idle_get_state_idx(cpu_rq(i));
 					unsigned long new_usage = boosted_task_util(p);
 					unsigned long capacity_orig = capacity_orig_of(i);
@@ -6319,7 +6325,7 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
 				}
 
 				target = cpumask_first_and(sched_group_cpus(sg),
-					tsk_cpus_allowed(p));
+					&allowed_cpus);
 				schedstat_inc(p, se.statistics.nr_wakeups_sis_idle_cpu);
 				schedstat_inc(this_rq(), eas_stats.sis_idle_cpu);
 				schedstat_inc(sd, eas_stats.sis_idle_cpu);
@@ -6428,7 +6434,7 @@ static inline int find_best_target(struct task_struct *p, bool boosted, bool pre
 			unsigned long capacity_orig = capacity_orig_of(i);
 			unsigned long min_capped_util;
 
-			if (!cpu_online(i))
+			if (!cpu_online(i) || cpu_isolated(i))
 				continue;
 
 			/*
@@ -6616,8 +6622,11 @@ static int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync
 
 	if (sysctl_sched_sync_hint_enable && sync) {
 		int cpu = smp_processor_id();
+		cpumask_t search_cpus;
+		cpumask_and(&search_cpus, tsk_cpus_allowed(p), cpu_online_mask);
 
-		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p))) {
+		cpumask_andnot(&search_cpus, &search_cpus, cpu_isolated_mask);
+		if (cpumask_test_cpu(cpu, &search_cpus)) {
 			schedstat_inc(p, se.statistics.nr_wakeups_secb_sync);
 			schedstat_inc(this_rq(), eas_stats.secb_sync);
 			return cpu;
@@ -6735,7 +6744,9 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 
 	if (affine_sd) {
 		sd = NULL; /* Prefer wake_affine over balance flags */
-		if (cpu != prev_cpu && wake_affine(affine_sd, p, prev_cpu, sync))
+		if (cpu != prev_cpu &&
+			wake_affine(affine_sd, p, prev_cpu, sync) &&
+			!cpu_isolated(cpu))
 			new_cpu = cpu;
 	}
 
@@ -8913,6 +8924,9 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 		if (rt > env->fbq_type)
 			continue;
 
+		if (cpu_isolated(i))
+			continue;
+
 		capacity = capacity_of(i);
 
 		wl = weighted_cpuload(i);
@@ -8995,6 +9009,15 @@ static int need_active_balance(struct lb_env *env)
 	return unlikely(sd->nr_balance_failed > sd->cache_nice_tries+2);
 }
 
+static int group_balance_cpu_not_isolated(struct sched_group *sg)
+{
+	cpumask_t cpus;
+
+	cpumask_and(&cpus, sched_group_cpus(sg), sched_group_mask(sg));
+	cpumask_andnot(&cpus, &cpus, cpu_isolated_mask);
+	return cpumask_first(&cpus);
+}
+
 static int active_load_balance_cpu_stop(void *data);
 
 static int should_we_balance(struct lb_env *env)
@@ -9024,12 +9047,15 @@ static int should_we_balance(struct lb_env *env)
 		if (!cpumask_test_cpu(cpu, sg_mask) || !idle_cpu(cpu))
 			continue;
 
+		if (cpu_isolated(cpu))
+			continue;
+
 		balance_cpu = cpu;
 		break;
 	}
 
 	if (balance_cpu == -1)
-		balance_cpu = group_balance_cpu(sg);
+		balance_cpu = group_balance_cpu_not_isolated(sg);
 
 	/*
 	 * First idle cpu or the first cpu(busiest) in this sched group
@@ -9624,7 +9650,10 @@ static struct {
 
 static inline int find_new_ilb(void)
 {
-	int ilb = cpumask_first(nohz.idle_cpus_mask);
+	int ilb;
+	cpumask_t cpumask;
+	cpumask_andnot(&cpumask, nohz.idle_cpus_mask, cpu_isolated_mask);
+	ilb = cpumask_first(&cpumask);
 
 	if (ilb < nr_cpu_ids && idle_cpu(ilb))
 		return ilb;
@@ -9897,6 +9926,9 @@ static void nohz_idle_balance(struct rq *this_rq, enum cpu_idle_type idle)
 		goto end;
 
 	for_each_cpu(balance_cpu, nohz.idle_cpus_mask) {
+		if (cpu_isolated(balance_cpu))
+			continue;
+
 		if (balance_cpu == this_cpu || !idle_cpu(balance_cpu))
 			continue;
 
@@ -9957,6 +9989,7 @@ static inline bool nohz_kick_needed(struct rq *rq)
 	struct sched_group_capacity *sgc;
 	int nr_busy, cpu = rq->cpu;
 	bool kick = false;
+	cpumask_t cpumask;
 
 	if (unlikely(rq->idle_balance))
 		return false;
@@ -9973,6 +10006,10 @@ static inline bool nohz_kick_needed(struct rq *rq)
 	 * balancing.
 	 */
 	if (likely(!atomic_read(&nohz.nr_cpus)))
+		return false;
+
+	cpumask_andnot(&cpumask, nohz.idle_cpus_mask, cpu_isolated_mask);
+	if (cpumask_empty(&cpumask))
 		return false;
 
 	if (time_before(now, nohz.next_balance))
@@ -10009,7 +10046,7 @@ static inline bool nohz_kick_needed(struct rq *rq)
 	}
 
 	sd = rcu_dereference(per_cpu(sd_asym, cpu));
-	if (sd && (cpumask_first_and(nohz.idle_cpus_mask,
+	if (sd && (cpumask_first_and(&cpumask,
 				  sched_domain_span(sd)) < cpu)) {
 		kick = true;
 		goto unlock;
@@ -10032,6 +10069,9 @@ static void run_rebalance_domains(struct softirq_action *h)
 	struct rq *this_rq = this_rq();
 	enum cpu_idle_type idle = this_rq->idle_balance ?
 						CPU_IDLE : CPU_NOT_IDLE;
+
+	if (cpu_isolated(this_rq->cpu))
+		return;
 
 	/*
 	 * If this cpu has a pending nohz_balance_kick, then do the
