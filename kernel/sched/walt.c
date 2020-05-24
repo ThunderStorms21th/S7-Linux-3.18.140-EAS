@@ -269,6 +269,16 @@ static int cpu_is_waiting_on_io(struct rq *rq)
 	return atomic_read(&rq->nr_iowait);
 }
 
+unsigned int nr_eligible_big_tasks(int cpu)
+{
+	struct rq *rq = cpu_rq(cpu);
+
+	if (!is_max_capacity_cpu(cpu))
+		return 0;
+
+	return rq->nr_running;
+}
+
 void walt_account_irqtime(int cpu, struct task_struct *curr,
 				 u64 delta, u64 wallclock)
 {
