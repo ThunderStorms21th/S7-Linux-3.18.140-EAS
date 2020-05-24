@@ -3146,7 +3146,7 @@ void scheduler_tick(void)
 	if (curr->sched_class == &fair_sched_class)
 		check_for_migration(rq, curr);
 
-	core_ctl_check(wallclock);
+	core_ctl_check(walt_ktime_clock());
 }
 
 #ifdef CONFIG_NO_HZ_FULL
