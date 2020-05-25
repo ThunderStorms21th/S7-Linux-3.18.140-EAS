@@ -114,7 +114,7 @@ SCHED_FEAT(ENERGY_AWARE, false)
  * off between energy consumption and performance impact when comparing
  * previous and next candidate CPUs.
  */
-SCHED_FEAT(ENERGY_FILTER, false)
+SCHED_FEAT(ENERGY_FILTER, true)
 
 /*
  * Minimum capacity capping. Keep track of minimum capacity factor when
@@ -122,7 +122,7 @@ SCHED_FEAT(ENERGY_FILTER, false)
  * If enabled, this can be used to inform the scheduler about capacity
  * restrictions.
  */
-SCHED_FEAT(MIN_CAPACITY_CAPPING, false)
+SCHED_FEAT(MIN_CAPACITY_CAPPING, true)
 
 /*
  * Maximum capacity capping. Keep track of maximum capacity factor when
@@ -130,7 +130,7 @@ SCHED_FEAT(MIN_CAPACITY_CAPPING, false)
  * If enabled, this can be used to inform the scheduler about capacity
  * restrictions.
  */
-SCHED_FEAT(MAX_CAPACITY_CAPPING, false)
+SCHED_FEAT(MAX_CAPACITY_CAPPING, true)
 
 /*
  * Apply schedtune boost hold to tasks of all sched classes.
@@ -142,4 +142,10 @@ SCHED_FEAT(MAX_CAPACITY_CAPPING, false)
  * RT class.
  */
 SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
+
+/*
+ * Bias schedtune boosted tasks to higher capacity CPUs.
+ * If disabled, no bias will be applied.
+ */
+SCHED_FEAT(STUNE_BOOST_BIAS_BIG, true)
 
