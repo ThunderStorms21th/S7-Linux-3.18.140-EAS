@@ -411,7 +411,10 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -w \
 		   -fno-strict-aliasing -fno-common \
 		   -Wno-format-security \
-		   -march=armv8-a -mtune=cortex-a72.cortex-a53 \
+		   -march=armv8-a -mtune=exynos-m1.cortex-a53 -mcpu=exynos-m1.cortex-a53 \
+		   # -march=armv8-a -mtune=cortex-a72.cortex-a53 \
+		   # -march=armv8-a -mtune=exynos-m1.cortex-a53 \
+		   # -march=armv8-a -mtune=exynos-m1 -mcpu=exynos-m1 \
 		   -std=gnu89
 
 KBUILD_AFLAGS_KERNEL :=
