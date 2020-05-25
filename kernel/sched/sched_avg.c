@@ -66,7 +66,7 @@ void sched_get_nr_running_avg(int *avg, int *iowait_avg, int *big_avg)
 		tmp_avg += per_cpu(nr, cpu) * diff;
 
 		tmp_big_avg += per_cpu(nr_big_prod_sum, cpu);
-		tmp_big_avg += nr_eligible_big_tasks(cpu) * diff;
+		tmp_big_avg += cpu_rq(cpu)->nr_heavy_running * diff;
 
 		tmp_iowait += per_cpu(iowait_prod_sum, cpu);
 		tmp_iowait +=  nr_iowait_cpu(cpu) * diff;
@@ -119,7 +119,7 @@ void sched_update_nr_prod(int cpu, long delta, bool inc)
 	BUG_ON((s64)per_cpu(nr, cpu) < 0);
 
 	per_cpu(nr_prod_sum, cpu) += nr_running * diff;
-	per_cpu(nr_big_prod_sum, cpu) += nr_eligible_big_tasks(cpu) * diff;
+	per_cpu(nr_big_prod_sum, cpu) += cpu_rq(cpu)->nr_heavy_running * diff;
 	per_cpu(iowait_prod_sum, cpu) += nr_iowait_cpu(cpu) * diff;
 	spin_unlock_irqrestore(&per_cpu(nr_lock, cpu), flags);
 }

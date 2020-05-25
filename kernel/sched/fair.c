@@ -161,6 +161,17 @@ static inline void update_load_set(struct load_weight *lw, unsigned long w)
 	lw->inv_weight = 0;
 }
 
+static void inc_cfs_nr_heavy_running(struct rq *update_rq,
+				     struct task_struct *p);
+static void dec_cfs_nr_heavy_running(struct rq *update_rq,
+				     struct task_struct *p);
+static inline void update_cfs_nr_heavy_running(struct rq *update_rq,
+					       struct task_struct *p)
+{
+	dec_cfs_nr_heavy_running(update_rq, p);
+	inc_cfs_nr_heavy_running(update_rq, p);
+}
+
 /*
  * Increase the granularity value when there are more CPUs,
  * because with more CPUs the 'effective latency' as visible
@@ -4797,6 +4808,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 #ifdef CONFIG_SMP
 	if (!se) {
 		walt_inc_cumulative_runnable_avg(rq, p);
+		inc_cfs_nr_heavy_running(rq, p);
 		if (!task_new && !rq->rd->overutilized &&
 		    cpu_overutilized(rq->cpu)) {
 			rq->rd->overutilized = true;
@@ -4910,6 +4922,7 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 
 	if (!se) {
 		walt_dec_cumulative_runnable_avg(rq, p);
+		dec_cfs_nr_heavy_running(rq, p);
 
 		/*
 		 * We want to potentially trigger a freq switch
@@ -6833,6 +6846,29 @@ static void task_dead_fair(struct task_struct *p)
 #else
 #define task_fits_max(p, cpu) true
 #endif /* CONFIG_SMP */
+
+static void inc_cfs_nr_heavy_running(struct rq *update_rq,
+				     struct task_struct *p)
+{
+	if (p->heavy_task)
+		return;
+
+	if (!task_fits_max(p, cpu_of(update_rq))) {
+		update_rq->nr_heavy_running++;
+		p->heavy_task = 1;
+	}
+}
+
+static void dec_cfs_nr_heavy_running(struct rq *update_rq,
+				     struct task_struct *p)
+{
+	if (p->heavy_task) {
+		update_rq->nr_heavy_running--;
+		p->heavy_task = 0;
+	}
+
+	WARN_ON(update_rq->nr_heavy_running < 0);
+}
 
 static unsigned long
 wakeup_gran(struct sched_entity *curr, struct sched_entity *se)
@@ -10104,6 +10140,8 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 
 	if (numabalancing_enabled)
 		task_tick_numa(rq, curr);
+
+	update_cfs_nr_heavy_running(rq, curr);
 
 #ifdef CONFIG_SMP
 	if (!rq->rd->overutilized && cpu_overutilized(task_cpu(curr))) {
