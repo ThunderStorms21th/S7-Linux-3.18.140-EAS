@@ -20,7 +20,6 @@
 #include <linux/sched.h>
 #include <linux/math64.h>
 #include <linux/module.h>
-#include <linux/cpumask.h>
 
 /*
  * Please note when changing the tuning values:
@@ -279,7 +278,6 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 {
 	struct menu_device *data = this_cpu_ptr(&menu_devices);
 	int latency_req = pm_qos_request(PM_QOS_CPU_DMA_LATENCY);
-	unsigned int cpu = dev->cpu;
 	int i;
 	unsigned int interactivity_req;
 	unsigned long nr_iowaiters;
@@ -343,10 +341,6 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 
 		if (s->disabled || su->disable)
 			continue;
-		if (cpu_isolated(cpu)) {
-			data->last_state_idx = i;
-			continue;
-		}
 		if (s->target_residency > data->predicted_us)
 			continue;
 		if (s->exit_latency > latency_req)
