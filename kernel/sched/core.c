@@ -92,6 +92,7 @@
 #include "core_ctl.h"
 #include "../workqueue_internal.h"
 #include "../smpboot.h"
+#include "../time/tick-internal.h"
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
@@ -2265,7 +2266,7 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 #ifdef CONFIG_SCHED_WALT
 	p->last_sleep_ts		= 0;
 #endif
-
+	p->heavy_task			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
 	walt_init_new_task_load(p);
 
@@ -3146,7 +3147,8 @@ void scheduler_tick(void)
 	if (curr->sched_class == &fair_sched_class)
 		check_for_migration(rq, curr);
 
-	core_ctl_check(walt_ktime_clock());
+	if (cpu == tick_do_timer_cpu)
+		core_ctl_check(walt_ktime_clock());
 }
 
 #ifdef CONFIG_NO_HZ_FULL
