@@ -24,7 +24,8 @@ LIBGCC 		:= $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
 
 KBUILD_DEFCONFIG := defconfig
 
-#ARM_ARCH_OPT := -mtune=cortex-a72.cortex-a53
+# ARM_ARCH_OPT := -mtune=cortex-a72.cortex-a53
+ARM_ARCH_OPT := -mtune=exynos-m1.cortex-a53
 GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a) \
 -g0 \
 -DNDEBUG \
