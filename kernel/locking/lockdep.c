@@ -3532,6 +3532,52 @@ static int __lock_is_held(struct lockdep_map *lock)
 	return 0;
 }
 
+<<<<<<< HEAD
+=======
+static void __lock_pin_lock(struct lockdep_map *lock)
+{
+	struct task_struct *curr = current;
+	int i;
+
+	if (unlikely(!debug_locks))
+		return;
+
+	for (i = 0; i < curr->lockdep_depth; i++) {
+		struct held_lock *hlock = curr->held_locks + i;
+
+		if (match_held_lock(hlock, lock)) {
+			hlock->pin_count++;
+			return;
+		}
+	}
+
+	WARN(1, "pinning an unheld lock\n");
+}
+
+static void __lock_unpin_lock(struct lockdep_map *lock)
+{
+	struct task_struct *curr = current;
+	int i;
+
+	if (unlikely(!debug_locks))
+		return;
+
+	for (i = 0; i < curr->lockdep_depth; i++) {
+		struct held_lock *hlock = curr->held_locks + i;
+
+		if (match_held_lock(hlock, lock)) {
+			if (WARN(!hlock->pin_count, "unpinning an unpinned lock\n"))
+				return;
+
+			hlock->pin_count--;
+			return;
+		}
+	}
+
+	WARN(1, "unpinning an unheld lock\n");
+}
+
+>>>>>>> a122215f6864c... BACKPORT: lockdep: Implement lock pinning - fix commited before
 /*
  * Check whether we follow the irq-flags state precisely:
  */
@@ -3654,6 +3700,43 @@ int lock_is_held(struct lockdep_map *lock)
 }
 EXPORT_SYMBOL_GPL(lock_is_held);
 
+<<<<<<< HEAD
+=======
+void lock_pin_lock(struct lockdep_map *lock)
+{
+	unsigned long flags;
+
+	if (unlikely(current->lockdep_recursion))
+		return;
+
+	raw_local_irq_save(flags);
+	check_flags(flags);
+
+	current->lockdep_recursion = 1;
+	__lock_pin_lock(lock);
+	current->lockdep_recursion = 0;
+	raw_local_irq_restore(flags);
+}
+EXPORT_SYMBOL_GPL(lock_pin_lock);
+
+void lock_unpin_lock(struct lockdep_map *lock)
+{
+	unsigned long flags;
+
+	if (unlikely(current->lockdep_recursion))
+		return;
+
+	raw_local_irq_save(flags);
+	check_flags(flags);
+
+	current->lockdep_recursion = 1;
+	__lock_unpin_lock(lock);
+	current->lockdep_recursion = 0;
+	raw_local_irq_restore(flags);
+}
+EXPORT_SYMBOL_GPL(lock_unpin_lock);
+
+>>>>>>> a122215f6864c... BACKPORT: lockdep: Implement lock pinning - fix commited before
 void lockdep_set_current_reclaim_state(gfp_t gfp_mask)
 {
 	current->lockdep_reclaim_gfp = gfp_mask;
