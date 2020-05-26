@@ -55,6 +55,7 @@ struct cluster_data {
 };
 
 struct cpu_data {
+	bool inited;
 	bool is_busy;
 	unsigned int busy;
 	unsigned int cpu;
@@ -63,6 +64,9 @@ struct cpu_data {
 	struct list_head sib;
 	bool isolated_by_us;
 	unsigned int max_nr;
+	unsigned int min_cpus;
+	unsigned int max_cpus;
+	bool disabled;
 };
 
 static DEFINE_PER_CPU(struct cpu_data, cpu_state);
@@ -972,6 +976,36 @@ static int __ref cpu_callback(struct notifier_block *nfb,
 static struct notifier_block __refdata cpu_notifier = {
 	.notifier_call = cpu_callback,
 };
+
+/* 
+ * Function for external Hotplug to disabling core control.
+ */
+void disable_core_control(bool disable)
+{
+	struct cpu_data *state;
+
+	/* Big cluster mask */
+	state = &per_cpu(cpu_state, 4);
+	if (state->inited && (state->disabled != disable)) {
+		state->disabled = disable;
+		if (!state->disabled) {
+			if (state->min_cpus > 2)
+				state->min_cpus = 2;
+			// wake_up_hotplug_thread(state);
+		}
+	}
+
+	/* Little cluster mask */
+	state = &per_cpu(cpu_state, 0);
+	if (state->inited && (state->disabled != disable)) {
+		state->disabled = disable;
+		if (!state->disabled) {
+			if (state->min_cpus > 2)
+				state->min_cpus = 2;
+			// wake_up_hotplug_thread(state);
+		}
+	}
+}
 
 /* ============================ init code ============================== */
 
