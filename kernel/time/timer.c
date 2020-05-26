@@ -1688,7 +1688,7 @@ static void __migrate_timers(int cpu, bool remove_pinned)
 	}
 
 	spin_unlock(&old_base->lock);
-	spin_unlock_irqrestore(&new_base->lock, flag);
+	spin_unlock_irqrestore(&new_base->lock, flags);
 	put_cpu_var(tvec_bases);
 }
 #endif /* CONFIG_HOTPLUG_CPU || CONFIG_CPUSETS */
