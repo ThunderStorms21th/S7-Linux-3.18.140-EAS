@@ -656,6 +656,11 @@ CONFIG_AIO_HOTPLUG=y
 CONFIG_ZEN_DECISION=y
 
 #
+# CPU sched hotplug
+#
+CONFIG_SCHED_CORE_CTL=y
+
+#
 # CPU frequency scaling drivers
 #
 CONFIG_CPUFREQ_DT=y
