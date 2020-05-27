@@ -92,8 +92,8 @@ struct cpufreq_thunderstorm2_cpuinfo {
 
 static DEFINE_PER_CPU(struct cpufreq_thunderstorm2_cpuinfo, cpuinfo);
 
-#define TASK_NAME_LEN 15
-struct task_struct *speedchange_task3;
+/* realtime thread handles frequency scaling */
+static struct task_struct *speedchange_task3;
 static cpumask_t speedchange_cpumask;
 static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
@@ -2183,6 +2183,7 @@ static int __init cpufreq_thunderstorm2_init(void)
 {
 	unsigned int i;
 	struct cpufreq_thunderstorm2_cpuinfo *pcpu;
+	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
 	screen_on = true;
 
 	/* Initalize per-cpu timers */
@@ -2208,6 +2209,9 @@ static int __init cpufreq_thunderstorm2_init(void)
 		return PTR_ERR(speedchange_task3);
 
 	kthread_bind(speedchange_task3, 0);
+	
+	sched_setscheduler_nocheck(speedchange_task3, SCHED_FIFO, &param);
+	get_task_struct(speedchange_task3);
 
 #ifdef CONFIG_ARCH_EXYNOS
 	pm_qos_add_notifier(PM_QOS_CLUSTER1_FREQ_MIN, &cpufreq_thunderstorm2_cluster1_min_qos_notifier);
@@ -2228,6 +2232,8 @@ module_init(cpufreq_thunderstorm2_init);
 static void __exit cpufreq_thunderstorm2_exit(void)
 {
 	cpufreq_unregister_governor(&cpufreq_gov_thunderstorm2);
+	kthread_stop(speedchange_task3);
+	put_task_struct(speedchange_task3);
 }
 
 module_exit(cpufreq_thunderstorm2_exit);
