@@ -74,8 +74,8 @@ struct cpufreq_interactiveS9_cpuinfo {
 
 static DEFINE_PER_CPU(struct cpufreq_interactiveS9_cpuinfo, cpuinfo);
 
-#define TASK_NAME_LEN 15
-struct task_struct *speedchange_task2;
+/* realtime thread handles frequency scaling */
+static struct task_struct *speedchange_task2;
 static cpumask_t speedchange_cpumask;
 static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
@@ -1990,6 +1990,7 @@ static int __init cpufreq_interactiveS9_init(void)
 {
 	unsigned int i;
 	struct cpufreq_interactiveS9_cpuinfo *pcpu;
+	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
 
 	/* Initalize per-cpu timers */
 	for_each_possible_cpu(i) {
@@ -2014,6 +2015,9 @@ static int __init cpufreq_interactiveS9_init(void)
 		return PTR_ERR(speedchange_task2);
 
 	kthread_bind(speedchange_task2, 0);
+	
+	sched_setscheduler_nocheck(speedchange_task2, SCHED_FIFO, &param);
+	get_task_struct(speedchange_task2);
 
 #ifdef CONFIG_ARCH_EXYNOS
 	pm_qos_add_notifier(PM_QOS_CLUSTER1_FREQ_MIN, &cpufreq_interactiveS9_cluster1_min_qos_notifier);
@@ -2034,6 +2038,8 @@ module_init(cpufreq_interactiveS9_init);
 static void __exit cpufreq_interactiveS9_exit(void)
 {
 	cpufreq_unregister_governor(&cpufreq_gov_interactiveS9);
+	kthread_stop(speedchange_task2);
+	put_task_struct(speedchange_task2);
 }
 
 module_exit(cpufreq_interactiveS9_exit);
