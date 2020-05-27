@@ -658,7 +658,7 @@ CONFIG_ZEN_DECISION=y
 #
 # CPU sched hotplug
 #
-CONFIG_SCHED_CORE_CTL=y
+# CONFIG_SCHED_CORE_CTL is not set
 
 #
 # CPU frequency scaling drivers
