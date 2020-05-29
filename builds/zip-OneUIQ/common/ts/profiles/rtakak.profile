@@ -5,7 +5,7 @@
    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor thunderstorm
    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-   write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 130000
+   write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 234000
    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1482000
    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm/go_hispeed_load
@@ -39,7 +39,7 @@
    chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor thunderstorm
    chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
-   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 312000
+   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 416000
    chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 1872000
    chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm/go_hi_load
@@ -70,17 +70,12 @@
    write /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm/down_low_load_threshold 18
    
    # CPU HOTPLUG
-   write /sys/power/cpuhotplug/enabled 0
+   # write /sys/power/cpuhotplug/enabled 0
    write /sys/module/autosmp/parameters/enabled Y
    write /sys/devices/system/cpu/cpufreq/mp-cpufreq/cluster1_all_cores_max_freq 0
    write /sys/module/workqueue/parameters/power_efficient N
 
-   # Samsung Hotplug settings
-   chmod 0664 /sys/power/cpuhotplug/max_online_cpu
-   write /sys/power/cpuhotplug/max_online_cpu 8
-   chmod 0664 /sys/power/cpuhotplug/min_online_cpu
-   write /sys/power/cpuhotplug/min_online_cpu 1
-   
+
 ## AutoSMP Hotplug settings | bc - big core , lc - little core
 #write > /sys/module/autosmp/parameters/enabled Y
  # Y - enable, N - disable
@@ -106,7 +101,7 @@ write /sys/kernel/autosmp/conf/min_cpus_bc 1
  # min cores OFF - 1 to 4
 write /sys/kernel/autosmp/conf/min_cpus_lc 2
  # min cores OFF - 1 to 4
-write /sys/kernel/autosmp/conf/scroff_single_core 1
+write /sys/kernel/autosmp/conf/scroff_single_core 0
  # 1- enable, 0 - disable
 
    # FINGERPRINT BOOST
@@ -115,22 +110,7 @@ write /sys/kernel/autosmp/conf/scroff_single_core 1
    # INPUT BOOST CPU
    write /sys/module/cpu_boost/parameters/input_boost_enabled 0
 
-   # HMP
-   chmod 0664 /sys/kernel/hmp/up_threshold
-   write /sys/kernel/hmp/up_threshold 780
-   chmod 0664 /sys/kernel/hmp/down_threshold
-   write /sys/kernel/hmp/down_threshold 280
-   chmod 0664 /sys/kernel/hmp/down_compensation_high_freq
-   write /sys/kernel/hmp/down_compensation_high_freq 962000
-   chmod 0664 /sys/kernel/hmp/down_compensation_mid_freq
-   write /sys/kernel/hmp/down_compensation_mid_freq 858000
-   chmod 0664 /sys/kernel/hmp/down_compensation_low_freq
-   write /sys/kernel/hmp/down_compensation_low_freq 754000
-   write /sys/devices/14ac0000.mali/throttling1 546
-   write /sys/devices/14ac0000.mali/throttling2 419
-   write /sys/devices/14ac0000.mali/throttling3 338
-   write /sys/devices/14ac0000.mali/throttling4 260
-   write /sys/devices/14ac0000.mali/trippimg 260
+   # Entropy
    write /proc/sys/kernel/random/write_wakeup_threshold 640
    write /proc/sys/kernel/random/read_wakeup_threshold 64
    write /proc/sys/vm/dirty_expire_centisecs 800
@@ -151,6 +131,11 @@ write /sys/kernel/autosmp/conf/scroff_single_core 1
    write /sys/devices/14ac0000.mali/highspeed_load 90
    chmod 0664 /sys/devices/14ac0000.mali/highspeed_delay
    write /sys/devices/14ac0000.mali/highspeed_delay 1
+   write /sys/devices/14ac0000.mali/throttling1 546
+   write /sys/devices/14ac0000.mali/throttling2 419
+   write /sys/devices/14ac0000.mali/throttling3 338
+   write /sys/devices/14ac0000.mali/throttling4 260
+   write /sys/devices/14ac0000.mali/trippimg 260
 
    # IO Scheduler
    write /sys/block/sda/queue/scheduler row
