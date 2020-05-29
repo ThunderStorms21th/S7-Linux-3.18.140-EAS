@@ -65,28 +65,10 @@
    write /sys/devices/system/cpu/cpu4/cpufreq/interactiveS9/boostpulse_duration 40000
 
    # CPU HOTPLUG
-   write /sys/power/cpuhotplug/enabled 1
+   # write /sys/power/cpuhotplug/enabled 1
    write /sys/module/autosmp/parameters/enabled N
    write /sys/devices/system/cpu/cpufreq/mp-cpufreq/cluster1_all_cores_max_freq 1
    write /sys/module/workqueue/parameters/power_efficient N
-
-   # Samsung Hotplug settings
-   chmod 0664 /sys/power/cpuhotplug/max_online_cpu
-   write /sys/power/cpuhotplug/max_online_cpu 8
-   chmod 0664 /sys/power/cpuhotplug/min_online_cpu
-   write /sys/power/cpuhotplug/min_online_cpu 1
-   chmod 0644 /sys/power/cpuhotplug/governor/big_mode_dual
-   write /sys/power/cpuhotplug/governor/big_mode_dual 7
-   chmod 0644 /sys/power/cpuhotplug/governor/big_mode_normal
-   write /sys/power/cpuhotplug/governor/big_mode_normal 6
-   chmod 0664 /sys/power/cpuhotplug/governor/dual_change_ms
-   # write /sys/power/cpuhotplug/governor/dual_change_ms 60
-   chmod 0644 /sys/power/cpuhotplug/governor/lit_multi_ratio
-   write /sys/power/cpuhotplug/governor/lit_multi_ratio 80
-   chmod 0644 /sys/power/cpuhotplug/governor/to_dual_ratio
-   write /sys/power/cpuhotplug/governor/to_dual_ratio 80
-   chmod 0644 /sys/power/cpuhotplug/governor/to_quad_ratio
-   write /sys/power/cpuhotplug/governor/to_quad_ratio 100
 
    # FINGERPRINT BOOST
    write /sys/kernel/fp_boost/enabled 0
@@ -94,17 +76,7 @@
    # INPUT BOOST CPU
    write /sys/module/cpu_boost/parameters/input_boost_enabled 0
 
-   # HMP
-   chmod 0664 /sys/kernel/hmp/up_threshold
-   write /sys/kernel/hmp/up_threshold 524
-   chmod 0664 /sys/kernel/hmp/down_threshold
-   write /sys/kernel/hmp/down_threshold 214
-   chmod 0664 /sys/kernel/hmp/down_compensation_high_freq
-   write /sys/kernel/hmp/down_compensation_high_freq 1170000
-   chmod 0664 /sys/kernel/hmp/down_compensation_mid_freq
-   write /sys/kernel/hmp/down_compensation_mid_freq 962000
-   chmod 0664 /sys/kernel/hmp/down_compensation_low_freq
-   write /sys/kernel/hmp/down_compensation_low_freq 858000
+   # Entropy
    write /proc/sys/kernel/random/write_wakeup_threshold 896
    write /proc/sys/kernel/random/read_wakeup_threshold 128
    write /proc/sys/vm/dirty_expire_centisecs 500
@@ -159,7 +131,7 @@
 
    # SWAP
    write /proc/sys/vm/swappiness 150
-   write /proc/sys/vm/vfs_cache_pressure 100
+   write /proc/sys/vm/vfs_cache_pressure 95
    # write /sys/module/zswap/parameters/max_pool_percent 500
 
    # LMK

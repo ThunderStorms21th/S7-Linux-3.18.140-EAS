@@ -65,30 +65,10 @@
    write /sys/devices/system/cpu/cpu4/cpufreq/interactiveS9/boostpulse_duration 20000
 
    # CPU HOTPLUG
-   write /sys/power/cpuhotplug/enabled 1
+   # write /sys/power/cpuhotplug/enabled 1
    write /sys/module/autosmp/parameters/enabled N
    write /sys/devices/system/cpu/cpufreq/mp-cpufreq/cluster1_all_cores_max_freq 1
    write /sys/module/workqueue/parameters/power_efficient N
-
-   # Samsung Hotplug settings
-   chmod 0664 /sys/power/cpuhotplug/max_online_cpu
-   write /sys/power/cpuhotplug/max_online_cpu 8
-   chmod 0664 /sys/power/cpuhotplug/min_online_cpu
-   write /sys/power/cpuhotplug/min_online_cpu 1
-   chmod 0644 /sys/power/cpuhotplug/governor/enabled
-   write /sys/power/cpuhotplug/governor/enabled 1
-   chmod 0644 /sys/power/cpuhotplug/governor/big_mode_dual
-   write /sys/power/cpuhotplug/governor/big_mode_dual 7
-   chmod 0644 /sys/power/cpuhotplug/governor/big_mode_normal
-   write /sys/power/cpuhotplug/governor/big_mode_normal 6
-   chmod 0664 /sys/power/cpuhotplug/governor/dual_change_ms
-   write /sys/power/cpuhotplug/governor/dual_change_ms 80
-   chmod 0644 /sys/power/cpuhotplug/governor/lit_multi_ratio
-   write /sys/power/cpuhotplug/governor/lit_multi_ratio 100
-   chmod 0644 /sys/power/cpuhotplug/governor/to_dual_ratio
-   write /sys/power/cpuhotplug/governor/to_dual_ratio 80
-   chmod 0644 /sys/power/cpuhotplug/governor/to_quad_ratio
-   write /sys/power/cpuhotplug/governor/to_quad_ratio 100
 
    # FINGERPRINT BOOST
    write /sys/kernel/fp_boost/enabled 1
@@ -96,16 +76,7 @@
    # INPUT BOOST CPU
    write /sys/module/cpu_boost/parameters/input_boost_enabled 0
 
-   # HMP
-   chmod 0664 /sys/kernel/hmp/up_threshold
-   write /sys/kernel/hmp/up_threshold 450
-   chmod 0664 /sys/kernel/hmp/down_threshold
-   write /sys/kernel/hmp/down_threshold 200
-   write /sys/kernel/hmp/down_compensation_high_freq 1170000
-   chmod 0664 /sys/kernel/hmp/down_compensation_mid_freq
-   write /sys/kernel/hmp/down_compensation_mid_freq 962000
-   chmod 0664 /sys/kernel/hmp/down_compensation_low_freq
-   write /sys/kernel/hmp/down_compensation_low_freq 858000
+   # Entropy
    write /proc/sys/kernel/random/write_wakeup_threshold 1024
    write /proc/sys/kernel/random/read_wakeup_threshold 192
    write /proc/sys/vm/dirty_expire_centisecs 500
@@ -123,7 +94,7 @@
    chmod 0664 /sys/devices/14ac0000.mali/highspeed_clock
    write /sys/devices/14ac0000.mali/highspeed_clock 419
    chmod 0664 /sys/devices/14ac0000.mali/highspeed_load
-   write /sys/devices/14ac0000.mali/highspeed_load 92
+   write /sys/devices/14ac0000.mali/highspeed_load 90
    chmod 0664 /sys/devices/14ac0000.mali/highspeed_delay
    write /sys/devices/14ac0000.mali/highspeed_delay 1
 
@@ -158,7 +129,7 @@
    write /sys/kernel/power_suspend/power_suspend_mode 3
    write /proc/sys/net/ipv4/tcp_congestion_control westwooSWAPPING the  kernel  of # SWAP
    write /proc/sys/vm/swappiness 150
-   write /proc/sys/vm/vfs_cache_pressure 100
+   write /proc/sys/vm/vfs_cache_pressure 95
 
    # LMK
    write /sys/module/lowmemorykiller/parameters/minfree "20432,26040,32648,42256,59064,101152"

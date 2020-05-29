@@ -36,7 +36,7 @@
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor ondemand
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
-   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 208000
+   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 416000
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 2080000
    chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/ondemand/up_threshold
@@ -45,40 +45,16 @@
    write /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate 50000
 
    # CPU HOTPLUG
-   write /sys/power/cpuhotplug/enabled 1
+   # write /sys/power/cpuhotplug/enabled 1
    write /sys/module/autosmp/parameters/enabled N
    write /sys/devices/system/cpu/cpufreq/mp-cpufreq/cluster1_all_cores_max_freq 0
    write /sys/module/workqueue/parameters/power_efficient Y
-
-   # Samsung Hotplug settings
-   chmod 0664 /sys/power/cpuhotplug/max_online_cpu
-   write /sys/power/cpuhotplug/max_online_cpu 8
-   chmod 0664 /sys/power/cpuhotplug/min_online_cpu
-   write /sys/power/cpuhotplug/min_online_cpu 1
-   chmod 0644 /sys/power/cpuhotplug/governor/big_mode_dual
-   write /sys/power/cpuhotplug/governor/big_mode_dual 7
-   chmod 0644 /sys/power/cpuhotplug/governor/big_mode_normal
-   write /sys/power/cpuhotplug/governor/big_mode_normal 6
-   chmod 0664 /sys/power/cpuhotplug/governor/dual_change_ms
-   write /sys/power/cpuhotplug/governor/dual_change_ms 80
-   chmod 0644 /sys/power/cpuhotplug/governor/lit_multi_ratio
-   write /sys/power/cpuhotplug/governor/lit_multi_ratio 100
-   chmod 0644 /sys/power/cpuhotplug/governor/to_dual_ratio
-   write /sys/power/cpuhotplug/governor/to_dual_ratio 85
-   chmod 0644 /sys/power/cpuhotplug/governor/to_quad_ratio
-   write /sys/power/cpuhotplug/governor/to_quad_ratio 98
 
    # FINGERPRINT BOOST
    write /sys/kernel/fp_boost/enabled 0
 
    # INPUT BOOST CPU
    write /sys/module/cpu_boost/parameters/input_boost_enabled 0
-
-   # HMP
-   chmod 0644 /sys/kernel/hmp/up_threshold
-   write /sys/kernel/hmp/up_threshold 600
-   chmod 0644 /sys/kernel/hmp/down_threshold
-   write /sys/kernel/hmp/down_threshold 225
 
    # GPU
    chmod 0644 /sys/devices/14ac0000.mali/max_clock
