@@ -69,7 +69,7 @@
    write /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/down_low_load_threshold 6
 
    # CPU HOTPLUG
-   write /sys/power/cpuhotplug/enabled 0
+   # write /sys/power/cpuhotplug/enabled 0
    write /sys/module/autosmp/parameters/enabled 1
    write /sys/devices/system/cpu/cpufreq/mp-cpufreq/cluster1_all_cores_max_freq 0
    
@@ -100,24 +100,7 @@
    # 1- enable, 0 - disable
    
 
-   # HMP
-   chmod 0664 /sys/kernel/hmp/up_threshold
-   write /sys/kernel/hmp/up_threshold 900
-   chmod 0664 /sys/kernel/hmp/down_threshold
-   write /sys/kernel/hmp/down_threshold 340
-   write /sys/kernel/hmp/down_compensation_threshold 140
-   write /sys/kernel/hmp/down_comepnsation_timeout 30
-   chmod 0664 /sys/kernel/hmp/down_compensation_high_freq
-   write /sys/kernel/hmp/down_compensation_high_freq 962000
-   chmod 0664 /sys/kernel/hmp/down_compensation_mid_freq
-   write /sys/kernel/hmp/down_compensation_mid_freq 858000
-   chmod 0664 /sys/kernel/hmp/down_compensation_low_freq
-   write /sys/kernel/hmp/down_compensation_low_freq 754000
-   write /sys/devices/14ac0000.mali/throttling1 600
-   write /sys/devices/14ac0000.mali/throttling2 546
-   write /sys/devices/14ac0000.mali/throttling3 419
-   write /sys/devices/14ac0000.mali/throttling4 338
-   write /sys/devices/14ac0000.mali/trippimg 260
+   # Entropy
    write /proc/sys/kernel/random/write_wakeup_threshold 64
    write /proc/sys/kernel/random/read_wakeup_threshold 64
    write /proc/sys/vm/dirty_expire_centisecs 500
@@ -138,6 +121,11 @@
    write /sys/devices/14ac0000.mali/highspeed_load 90
    chmod 0664 /sys/devices/14ac0000.mali/highspeed_delay
    write /sys/devices/14ac0000.mali/highspeed_delay 0
+   write /sys/devices/14ac0000.mali/throttling1 600
+   write /sys/devices/14ac0000.mali/throttling2 546
+   write /sys/devices/14ac0000.mali/throttling3 419
+   write /sys/devices/14ac0000.mali/throttling4 338
+   write /sys/devices/14ac0000.mali/trippimg 260
 
    # IO Scheduler
    write /sys/block/sda/queue/scheduler row
@@ -181,7 +169,4 @@
 
    # LMK
    write /sys/module/lowmemorykiller/parameters/minfree "18432,23040,27648,32256,56064,81152"
-
-
-
 

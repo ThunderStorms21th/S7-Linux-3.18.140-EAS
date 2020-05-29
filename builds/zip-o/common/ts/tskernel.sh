@@ -22,7 +22,7 @@ BUILDPROP=/system/build.prop
 	## System Patches
 
 	# Clean Apex data
-	rm -rf /data/data/com.sec.android.app.apex
+	# rm -rf /data/data/com.sec.android.app.apex
 	# Remove init.d Placeholder
 	rm -f /system/etc/init.d/placeholder
 	# Delete Wakelock.sh 
