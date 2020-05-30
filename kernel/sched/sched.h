@@ -925,6 +925,11 @@ static inline struct cpumask *sched_group_cpus(struct sched_group *sg)
 	return to_cpumask(sg->cpumask);
 }
 
+static inline struct cpumask *sched_group_span(struct sched_group *sg)
+{
+	return to_cpumask(sg->cpumask);
+}
+
 /*
  * cpumask masking which cpus in the group are allowed to iterate up the domain
  * tree.
