@@ -18,11 +18,6 @@
 #include "sched.h"
 #include "tune.h"
 
-static unsigned long task_util(struct task_struct *p)
-{
-	return p->se.avg.util_avg;
-}
-
 static inline struct task_struct *task_of(struct sched_entity *se)
 {
 	return container_of(se, struct task_struct, se);
@@ -53,7 +48,7 @@ static inline struct device_node *get_ehmp_node(void)
 
 static bool sd_overutilized(struct sched_domain *sd)
 {
-	return sd->shared->overutilized;
+	return sd->overutilized;
 }
 
 #define tsk_cpus_allowed(tsk)	(&(tsk)->cpus_allowed)
@@ -1604,7 +1599,7 @@ int exynos_select_cpu(struct task_struct *p, int prev_cpu, int sync, int sd_flag
 		goto unlock;
 
 	boosted = schedtune_task_boost(p) > 0;
-	prefer_idle = sched_feat(EAS_PREFER_IDLE) ? (schedtune_task_boost(p) > 0) : 0;
+	prefer_idle = 0;
 
 	min_util = boosted_task_util(p);
 
