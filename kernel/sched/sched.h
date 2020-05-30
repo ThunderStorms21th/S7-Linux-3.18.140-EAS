@@ -462,6 +462,7 @@ struct rt_rq {
 	struct irq_work push_work;
 	raw_spinlock_t push_lock;
 #endif
+	struct sched_avg avg;
 #endif /* CONFIG_SMP */
 	int rt_queued;
 
@@ -1508,6 +1509,7 @@ static inline int hrtick_enabled(struct rq *rq)
 
 #ifdef CONFIG_SMP
 extern void sched_avg_update(struct rq *rq);
+extern unsigned long sched_get_rt_rq_util(int cpu);
 
 #ifndef arch_scale_freq_capacity
 static __always_inline
