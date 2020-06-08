@@ -17,6 +17,8 @@
 #include <linux/input/input_booster.h>
 #endif
 
+#include <linux/pm_qos.h>
+
 #define SEC_TS_I2C_NAME "sec_ts"
 #define SEC_TS_DEVICE_NAME "SEC_TS"
 
@@ -601,6 +603,8 @@ struct sec_ts_data {
 	int (*sec_ts_i2c_read)(struct sec_ts_data * ts, u8 reg, u8 * data, int len);
 	int (*sec_ts_i2c_read_bulk) (struct sec_ts_data * ts, u8 * data, int len);
 	int (*sec_ts_i2c_write_burst)(struct sec_ts_data *ts, u8 *data, int len);
+
+	struct pm_qos_request pm_qos_req;
 };
 
 struct sec_ts_plat_data {

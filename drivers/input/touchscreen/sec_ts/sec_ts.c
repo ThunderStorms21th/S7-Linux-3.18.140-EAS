@@ -32,6 +32,7 @@
 #include <linux/of_gpio.h>
 #include <linux/time.h>
 #include <linux/vmalloc.h>
+#include <linux/pm_qos.h>
 
 #ifdef CONFIG_WAKE_GESTURES
 #include <linux/kernel.h>
@@ -964,8 +965,11 @@ static irqreturn_t sec_ts_irq_thread(int irq, void *ptr)
 	if (ts->lowpower_mode)
 		pm_wakeup_event(ts->input_dev->dev.parent, 1000);
 
+	pm_qos_update_request(&ts->pm_qos_req, 100);
+
 	sec_ts_read_event(ts);
 
+	pm_qos_update_request(&ts->pm_qos_req, PM_QOS_DEFAULT_VALUE);
 	return IRQ_HANDLED;
 }
 
@@ -2052,6 +2056,9 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	ts->probe_done = true;
 	device_init_wakeup(&client->dev, true);
 
+	pm_qos_add_request(&ts->pm_qos_req, PM_QOS_CPU_DMA_LATENCY,
+		PM_QOS_DEFAULT_VALUE);
+
 	return 0;
 
 err_irq:
@@ -2387,6 +2394,8 @@ static int sec_ts_remove(struct i2c_client *client)
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
 	tui_tsp_info = NULL;
 #endif
+
+	pm_qos_remove_request(&ts->pm_qos_req);
 	kfree(ts);
 	return 0;
 }
