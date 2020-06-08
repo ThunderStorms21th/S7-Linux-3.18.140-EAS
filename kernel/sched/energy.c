@@ -123,7 +123,7 @@ void init_sched_energy_costs(void)
 	}
 
 	pr_info("Sched-energy-costs installed from DT\n");
-	set_energy_aware();
+	// set_energy_aware();  /* don't enable always ENERGY_AWARE */
 	return;
 
 out:
