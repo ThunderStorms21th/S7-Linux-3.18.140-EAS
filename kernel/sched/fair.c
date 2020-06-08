@@ -6541,7 +6541,7 @@ static inline int find_best_target(struct task_struct *p, bool boosted, bool pre
 					 * Find a target cpu with the lowest/highest
 					 * utilization if prefer_idle/!prefer_idle.
 					 */
-					if (prefer_idle) {
+					if (!prefer_idle) {
 						/* Favor the CPU that last ran the task */
 						if (new_util > target_util ||
 						    wake_util > min_wake_util)
