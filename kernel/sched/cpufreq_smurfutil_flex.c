@@ -29,15 +29,15 @@
 
 #define RATE_LIMIT				2000
 
-#define BIT_SHIFT_1 				7
+#define BIT_SHIFT_1 				3
 #define BIT_SHIFT_1_2 				4
 #define BIT_SHIFT_2 				6
 #define TARGET_LOAD_1				30
 #define TARGET_LOAD_2				80
 
-#define BIT_SHIFT_1_BIGC 			4
+#define BIT_SHIFT_1_BIGC 			6
 #define BIT_SHIFT_1_2_BIGC 			4
-#define BIT_SHIFT_2_BIGC 			6
+#define BIT_SHIFT_2_BIGC 			4
 #define TARGET_LOAD_1_BIGC 			25
 #define TARGET_LOAD_2_BIGC 			50
 
@@ -54,7 +54,7 @@
 #define DEFAULT_SUSPEND_MAX_FREQ_GOLD_BC	624000
 #define DEFAULT_HISPEED_FREQ_BC			728000
 
-#define SMUGOV_KTHREAD_PRIORITY			25	//50
+#define SMUGOV_KTHREAD_PRIORITY			50	//50
 
 struct smugov_tunables {
 	struct gov_attr_set attr_set;

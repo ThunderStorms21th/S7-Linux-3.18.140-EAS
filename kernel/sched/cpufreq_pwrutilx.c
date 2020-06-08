@@ -35,11 +35,11 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define LATENCY_MULTIPLIER_BC_UP		(5000)
+#define LATENCY_MULTIPLIER_BC_UP		(1000)
 #define LATENCY_MULTIPLIER_BC_DOWN		(400)
-#define LATENCY_MULTIPLIER_LC_UP		(600)
+#define LATENCY_MULTIPLIER_LC_UP		(500)
 #define LATENCY_MULTIPLIER_LC_DOWN		(300)
-#define PWRGOV_KTHREAD_PRIORITY			25	// 25
+#define PWRGOV_KTHREAD_PRIORITY			50	// 25
 
 struct pwrgov_tunables {
     struct gov_attr_set attr_set;
@@ -668,13 +668,14 @@ initialize:
     // tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
     
     /* Set LATENCY_MULTIPLER depends on cluster LITTLE.big  - XDA@nalas */
-    if (cpu < 4){
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
 	    tunables->up_rate_limit_us = LATENCY_MULTIPLIER_LC_UP;
 	    tunables->down_rate_limit_us = LATENCY_MULTIPLIER_LC_DOWN;
-    } else {
+    	}
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
 	    tunables->up_rate_limit_us = LATENCY_MULTIPLIER_BC_UP;
 	    tunables->down_rate_limit_us = LATENCY_MULTIPLIER_BC_DOWN;
-    }
+    	}
     
     lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
     if (lat) {

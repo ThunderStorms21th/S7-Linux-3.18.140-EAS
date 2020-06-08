@@ -36,9 +36,9 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 
-#define UP_RATE_LIMIT				600	// 1000
+#define UP_RATE_LIMIT				500	// 1000
 #define DOWN_RATE_LIMIT				300	// 1000
-#define UP_RATE_LIMIT_BC			5000	// 1000
+#define UP_RATE_LIMIT_BC			1000	// 1000
 #define DOWN_RATE_LIMIT_BC			400	// 1000
 
 /* Frequency cap for target_load1 in KHz */
@@ -55,7 +55,7 @@ unsigned long boosted_cpu_util(int cpu);
 #define TARGET_LOAD_1_BIGC 			25	// 15
 #define TARGET_LOAD_2_BIGC 			60	// 50
 
-#define NRGGOV_KTHREAD_PRIORITY			25	// 25
+#define NRGGOV_KTHREAD_PRIORITY			50	// 25
 
 struct nrggov_tunables {
 	struct gov_attr_set attr_set;
@@ -850,14 +850,15 @@ static void get_tunables_data(struct nrggov_tunables *tunables,
 	}
 
 initialize:
-	if (cpu < 4){
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
 		tunables->target_load1 = TARGET_LOAD_1;
 		tunables->target_load2 = TARGET_LOAD_2;
 		tunables->load1_cap = LOAD1_CAP;
 		tunables->load2_cap = LOAD2_CAP;
 		tunables->up_rate_limit_us = UP_RATE_LIMIT;
 		tunables->down_rate_limit_us = DOWN_RATE_LIMIT;
-	} else {
+	}
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
 		tunables->target_load1 = TARGET_LOAD_1_BIGC;
 		tunables->target_load2 = TARGET_LOAD_2_BIGC;
 		tunables->load1_cap = LOAD1_CAP_BIGC;

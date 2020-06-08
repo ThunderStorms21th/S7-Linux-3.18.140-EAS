@@ -19,8 +19,8 @@
 
 #include "sched.h"
 
-#define THROTTLE_DOWN_NSEC	500000		/* 50ms default : 50000000 */
-#define THROTTLE_UP_NSEC	120000		/* 500us default : 500000  */
+#define THROTTLE_DOWN_NSEC	5000000		/* 50ms default : 50000000 */
+#define THROTTLE_UP_NSEC	300000		/* 500us default : 500000  */
 
 struct static_key __read_mostly __sched_freq = STATIC_KEY_INIT_FALSE;
 static bool __read_mostly cpufreq_driver_slow;

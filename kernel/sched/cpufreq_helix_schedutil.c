@@ -36,21 +36,21 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 
-#define UP_RATE_LIMIT				600	// 1000
+#define UP_RATE_LIMIT				500	// 1000
 #define DOWN_RATE_LIMIT				300
 #define BIT_SHIFT_1 				6
 #define BIT_SHIFT_2 				6
 #define TARGET_LOAD_1				25
 #define TARGET_LOAD_2				75
 
-#define UP_RATE_LIMIT_BIGC			5000	// 1000
+#define UP_RATE_LIMIT_BIGC			1000	// 1000
 #define DOWN_RATE_LIMIT_BIGC			400
 #define BIT_SHIFT_1_BIGC 			4
 #define BIT_SHIFT_2_BIGC 			4
 #define TARGET_LOAD_1_BIGC 			30
 #define TARGET_LOAD_2_BIGC 			70
 
-#define HXGOV_KTHREAD_PRIORITY			25	// 25
+#define HXGOV_KTHREAD_PRIORITY			50	// 25
 
 struct hxgov_tunables {
 	struct gov_attr_set attr_set;
@@ -828,14 +828,15 @@ static void get_tunables_data(struct hxgov_tunables *tunables,
 	}
 
 initialize:
-	if (cpu < 4){
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
 		tunables->up_rate_limit_us = UP_RATE_LIMIT;
 		tunables->down_rate_limit_us = DOWN_RATE_LIMIT;
 		tunables->bit_shift1 = BIT_SHIFT_1;
 		tunables->bit_shift2 = BIT_SHIFT_2;
 		tunables->target_load1 = TARGET_LOAD_1;
 		tunables->target_load2 = TARGET_LOAD_2;
-	} else {
+	}
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
 		tunables->up_rate_limit_us = UP_RATE_LIMIT_BIGC;
 		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_BIGC;
 		tunables->bit_shift1 = BIT_SHIFT_1_BIGC;

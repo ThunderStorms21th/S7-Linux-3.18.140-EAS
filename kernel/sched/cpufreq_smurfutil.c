@@ -29,20 +29,20 @@
 
 #define RATE_LIMIT				2000
 
-#define BIT_SHIFT_1 				6	// 9
-#define BIT_SHIFT_2 				8	// 9
+#define BIT_SHIFT_1 				4	// 9
+#define BIT_SHIFT_2 				4	// 9
 #define TARGET_LOAD_1				30
 #define TARGET_LOAD_2				75
 
-#define BIT_SHIFT_1_BIGC 			4
-#define BIT_SHIFT_2_BIGC 			6
+#define BIT_SHIFT_1_BIGC 			6
+#define BIT_SHIFT_2_BIGC 			4
 #define TARGET_LOAD_1_BIGC 			25
 #define TARGET_LOAD_2_BIGC 			70
 
-#define LATENCY_MULTIPLIER			(600)
+#define LATENCY_MULTIPLIER			(500)
 #define LATENCY_MULTIPLIER_BC			(1000)
-#define LATENCY_MULTIPLIER_UP_LC		(600)
-#define LATENCY_MULTIPLIER_UP_BC		(5000)
+#define LATENCY_MULTIPLIER_UP_LC		(500)
+#define LATENCY_MULTIPLIER_UP_BC		(1000)
 #define LATENCY_MULTIPLIER_DOWN_LC		(300)
 #define LATENCY_MULTIPLIER_DOWN_BC		(400)
 #define cpufreq_driver_fast_switch(x, y) 0
@@ -57,7 +57,7 @@
 #define DEFAULT_HISPEED_FREQ_BC			832000
 #define DEFAULT_SUSPEND_CAPACITY_FACTOR 10
 
-#define SMUGOV_KTHREAD_PRIORITY			25	// 25
+#define SMUGOV_KTHREAD_PRIORITY			50	// 25
 
 
 struct smugov_tunables {
@@ -1178,7 +1178,7 @@ static int smugov_init(struct cpufreq_policy *policy)
 	// tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD;
 	tunables->suspend_capacity_factor = DEFAULT_SUSPEND_CAPACITY_FACTOR;
 
-	if (cpu < 4){
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
 		// tunables->rate_limit_us = RATE_LIMIT;
 		tunables->bit_shift1 = BIT_SHIFT_1;
 		tunables->bit_shift2 = BIT_SHIFT_2;
@@ -1188,7 +1188,8 @@ static int smugov_init(struct cpufreq_policy *policy)
 		tunables->silver_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_SILVER;
 		tunables->gold_suspend_max_freq = DEFAULT_SUSPEND_MAX_FREQ_GOLD;
 		tunables->hispeed_freq = DEFAULT_HISPEED_FREQ;
-	} else {
+	}
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
 		// tunables->rate_limit_us = RATE_LIMIT;
 		tunables->bit_shift1 = BIT_SHIFT_1_BIGC;
 		tunables->bit_shift2 = BIT_SHIFT_2_BIGC;

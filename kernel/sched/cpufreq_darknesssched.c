@@ -41,13 +41,13 @@
 #undef LATENCY_MULTIPLIER
 #define LATENCY_MULTIPLIER			(2000)
 #define LATENCY_MULTIPLIER_LC_UP		(600)	// 2000
-#define LATENCY_MULTIPLIER_BC_UP		(5000)	// 2000
+#define LATENCY_MULTIPLIER_BC_UP		(2000)	// 2000
 #define LATENCY_MULTIPLIER_LC_DOWN		(300)	// 2000
 #define LATENCY_MULTIPLIER_BC_DOWN		(400)	// 2000
-#define DKGOV_KTHREAD_PRIORITY	50			// 50
+#define DKGOV_KTHREAD_PRIORITY			50	// 50
 
 #define BOOST_PERC					15
-#define BOOST_PERC_BC					5
+#define BOOST_PERC_BC					10
 #define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(80000 * NSEC_PER_USEC))
 
 struct dkgov_tunables {
@@ -753,11 +753,12 @@ initialize:
 	// tunables->down_rate_limit_us = LATENCY_MULTIPLIER;
 	
 	/* Set LATENCY_MULTIPLER depends on cluster LITTLE.big  - XDA@nalas */
-	if (cpu < 4){
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
 		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_LC_UP;
 		tunables->down_rate_limit_us = LATENCY_MULTIPLIER_LC_DOWN;
 		tunables->boost_perc = BOOST_PERC;
-	} else {
+	}
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
 		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_BC_UP;
 		tunables->down_rate_limit_us = LATENCY_MULTIPLIER_BC_DOWN;
 		tunables->boost_perc = BOOST_PERC_BC;
@@ -863,6 +864,8 @@ static int dkgov_exit(struct cpufreq_policy *policy)
 
 	dkgov_kthread_stop(sg_policy);
 	dkgov_policy_free(sg_policy);
+	
+	return 0;
 }
 
 static int dkgov_start(struct cpufreq_policy *policy)
@@ -917,6 +920,8 @@ static int dkgov_stop(struct cpufreq_policy *policy)
 
 	irq_work_sync(&sg_policy->irq_work);
 	kthread_cancel_work_sync(&sg_policy->work);
+	
+	return 0;
 }
 
 static int dkgov_limits(struct cpufreq_policy *policy)
@@ -930,6 +935,8 @@ static int dkgov_limits(struct cpufreq_policy *policy)
 	}
 
 	sg_policy->need_freq_update = true;
+	
+	return 0;
 }
 
 static int cpufreq_darknesssched_cb(struct cpufreq_policy *policy,
@@ -961,14 +968,10 @@ static struct cpufreq_governor darknesssched_gov = {
 	.limits = dkgov_limits,
 }; */
 
-#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_DARKNESSSCHED
-struct cpufreq_governor *cpufreq_default_governor(void)
-{
-	return &darknesssched_gov;
-}
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_DARKNESSSCHED
+static
 #endif
-
-static struct cpufreq_governor darknesssched_gov = {
+struct cpufreq_governor darknesssched_gov = {
 	.name = "darknesssched",
 	.governor = cpufreq_darknesssched_cb,
 	.owner = THIS_MODULE,

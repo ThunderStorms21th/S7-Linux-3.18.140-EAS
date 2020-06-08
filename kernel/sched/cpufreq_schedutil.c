@@ -37,11 +37,11 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define LATENCY_MULTIPLIER_BC_UP		(5000)
+#define LATENCY_MULTIPLIER_BC_UP		(1000)
 #define LATENCY_MULTIPLIER_BC_DOWN		(400)
-#define LATENCY_MULTIPLIER_LC_UP		(600)
+#define LATENCY_MULTIPLIER_LC_UP		(500)
 #define LATENCY_MULTIPLIER_LC_DOWN		(300)
-#define SUGOV_KTHREAD_PRIORITY			25	// 50
+#define SUGOV_KTHREAD_PRIORITY			50	// 50
 #define CPUFREQ_TRANSITION_DELAY		500	// 500
 
 struct sugov_tunables {
@@ -818,10 +818,11 @@ static void get_tunables_data(struct sugov_tunables *tunables,
 
 initialize:
 	/* Set LATENCY_MULTIPLER depends on cluster LITTLE.big  - XDA@nalas */
-	if (cpu < 4) {
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
 		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_LC_UP;
 		tunables->down_rate_limit_us = LATENCY_MULTIPLIER_LC_DOWN;
-	} else {
+	}
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
 		tunables->up_rate_limit_us = LATENCY_MULTIPLIER_BC_UP;
 		tunables->down_rate_limit_us = LATENCY_MULTIPLIER_BC_DOWN;
 	}
@@ -883,7 +884,7 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 	
-	tunables->iowait_boost_enable = false;
+	tunables->iowait_boost_enable = policy->iowait_boost_enable;
 	
 	get_tunables_data(tunables, policy);
 

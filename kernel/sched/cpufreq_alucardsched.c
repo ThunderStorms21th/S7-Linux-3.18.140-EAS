@@ -39,7 +39,6 @@
 #define cpufreq_disable_fast_switch(x)
 #define ACGOV_KTHREAD_PRIORITY	50
 
-#ifdef CONFIG_ARCH_DUMMY
 #define UP_RATE_LIMIT_US_LC			(30000)
 #define UP_RATE_LIMIT_US_BIGC		(300000)
 #define DOWN_RATE_LIMIT_US_LC			(20000)
@@ -52,22 +51,7 @@
 #define PUMP_DEC_STEP				1
 #define BOOST_PERC					10
 #define BOOST_PERC_BC			5			// 10
-#else
-#define UP_RATE_LIMIT_US_LC			(30000)
-#define UP_RATE_LIMIT_US_BIGC		(300000)
-#define DOWN_RATE_LIMIT_US_LC			(20000)
-#define DOWN_RATE_LIMIT_US_BIGC		(20000)
-#define FREQ_RESPONSIVENESS_LC			1066000
-#define FREQ_RESPONSIVENESS_BC			1040000
-#define FREQ_RESPONSIVENESS_LC			1066000
-#define FREQ_RESPONSIVENESS_BC			1040000
-#define PUMP_INC_STEP_AT_MIN_FREQ	1
-#define PUMP_INC_STEP				1
-#define PUMP_DEC_STEP_AT_MIN_FREQ	1
-#define PUMP_DEC_STEP				1
-#define BOOST_PERC					10
-#define BOOST_PERC_BC			5			// 10
-#endif
+
 #ifdef CONFIG_STATE_NOTIFIER
 #define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(80000 * NSEC_PER_USEC))
 #endif
@@ -134,7 +118,6 @@ struct acgov_cpu {
 static DEFINE_PER_CPU(struct acgov_cpu, acgov_cpu);
 static DEFINE_PER_CPU(struct acgov_tunables, cached_tunables);
 
-#ifdef CONFIG_ARCH_DUMMY
 #define LITTLE_NFREQS				14
 #define BIG_NFREQS					22
 static unsigned long little_capacity[LITTLE_NFREQS][2] = {
@@ -176,7 +159,6 @@ static unsigned long big_capacity[BIG_NFREQS][2] = {
 	{942, 983},
 	{983, 1024}
 };
-#endif
 
 /************************ Governor internals ***********************/
 
@@ -308,7 +290,6 @@ static unsigned int resolve_target_freq(struct cpufreq_policy *policy,
 	return target_freq;
 }
 
-#ifdef CONFIG_ARCH_DUMMY
 static void get_target_capacity(unsigned int cpu, int index,
 					unsigned long *down_cap, unsigned long *up_cap)
 {
@@ -320,26 +301,6 @@ static void get_target_capacity(unsigned int cpu, int index,
 		*up_cap = big_capacity[index][1];
 	}
 }
-#else
-static void get_target_load(struct cpufreq_policy *policy, int index,
-					unsigned int *down_load, unsigned int *up_load)
-{
-	struct cpufreq_frequency_table *table;
-	int i = 0;
-
-	if (!policy)
-		return;
-
-	table = policy->freq_table;
-	for (i = (index - 1); i >= 0; i--) {
-		if (table[i].frequency != CPUFREQ_ENTRY_INVALID) {
-			*down_load = clamp_val((table[i].frequency * 100) / policy->max, 0, 100);
-			break;
-		}
-	}
-	*up_load = clamp_val((policy->cur * 100) / policy->max, 0, 100);
-}
-#endif
 
 /**
  * get_next_freq - Compute a new frequency for a given cpufreq policy.
@@ -361,15 +322,9 @@ static unsigned int get_next_freq(struct acgov_cpu *sg_cpu, unsigned long util,
 	int pump_inc_step = tunables->pump_inc_step;
 	int pump_dec_step = tunables->pump_dec_step;
 	unsigned int next_freq = 0;
-#ifdef CONFIG_ARCH_DUMMY
 	unsigned long down_cap = 0, up_cap = 0;
 	unsigned long cur_util =
 			util + ((util * tunables->boost_perc) / 100);
-#else
-	unsigned int up_load = 0, down_load = 0;
-	unsigned int cur_load =
-		(util * (100 + tunables->boost_perc)) / max;
-#endif
 	int index;
 
 #ifdef CONFIG_MSM_TRACK_FREQ_TARGET_INDEX
@@ -383,7 +338,6 @@ static unsigned int get_next_freq(struct acgov_cpu *sg_cpu, unsigned long util,
 		pump_inc_step = tunables->pump_inc_step_at_min_freq;
 		pump_dec_step = tunables->pump_dec_step_at_min_freq;
 	}
-#ifdef CONFIG_ARCH_DUMMY
 	get_target_capacity(policy->cpu, index, &down_cap, &up_cap);
 	if (cur_util >= up_cap
 		&& policy->cur < policy->max) {
@@ -394,18 +348,7 @@ static unsigned int get_next_freq(struct acgov_cpu *sg_cpu, unsigned long util,
 		next_freq = resolve_target_freq(policy,
 			index, pump_dec_step, false);
 	}
-#else
-	get_target_load(policy, index, &down_load, &up_load);
-	if (cur_load >= up_load
-		&& policy->cur < policy->max) {
-		next_freq = resolve_target_freq(policy,
-			index, pump_inc_step, true);
-	} else if (cur_load < down_load
-		&& policy->cur > policy->min) {
-		next_freq = resolve_target_freq(policy,
-			index, pump_dec_step, false);
-	}
-#endif
+
 #ifndef CONFIG_MSM_TRACK_FREQ_TARGET_INDEX
 skip:
 #endif
@@ -1017,7 +960,6 @@ static void get_tunables_data(struct acgov_tunables *tunables,
 	}
 
 initialize:
-#ifdef CONFIG_ARCH_DUMMY
 	if (cpu < 4) {
 		tunables->up_rate_limit_us = UP_RATE_LIMIT_US_LC;
 		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US_LC;
@@ -1027,15 +969,7 @@ initialize:
 	}
 
 	// tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US;
-#else
-	if (cpu < 4) {
-		tunables->up_rate_limit_us = UP_RATE_LIMIT_US_LC;
-		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US_LC;
-	} else {
-		tunables->up_rate_limit_us = UP_RATE_LIMIT_US_BIGC;
-		tunables->down_rate_limit_us = DOWN_RATE_LIMIT_US_BIGC;
-	}
-#endif
+
 	lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 	if (lat) {
 		tunables->up_rate_limit_us *= lat;
@@ -1150,7 +1084,7 @@ static int acgov_exit(struct cpufreq_policy *policy)
 	acgov_kthread_stop(sg_policy);
 	acgov_policy_free(sg_policy);
 
-	return;
+	return 0;
 }
 
 static int acgov_start(struct cpufreq_policy *policy)
@@ -1208,7 +1142,7 @@ static int acgov_stop(struct cpufreq_policy *policy)
 	irq_work_sync(&sg_policy->irq_work);
 	kthread_cancel_work_sync(&sg_policy->work);
 
-	return;
+	return 0;
 }
 
 static int acgov_limits(struct cpufreq_policy *policy)
@@ -1223,7 +1157,7 @@ static int acgov_limits(struct cpufreq_policy *policy)
 
 	sg_policy->need_freq_update = true;
 
-	return;
+	return 0;
 }
 
 static int cpufreq_alucardsched_cb(struct cpufreq_policy *policy,
@@ -1257,13 +1191,9 @@ struct cpufreq_governor alucardsched_gov = {
 }; */
 
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_ALUCARDSCHED
-struct cpufreq_governor *cpufreq_default_governor(void)
-{
-	return &alucardsched_gov;
-}
+static
 #endif
-
-static struct cpufreq_governor alucardsched_gov = {
+struct cpufreq_governor alucardsched_gov = {
 	.name = "alucardsched",
 	.governor = cpufreq_alucardsched_cb,
 	.owner = THIS_MODULE,

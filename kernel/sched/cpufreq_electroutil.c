@@ -36,9 +36,9 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define LATENCY_MULTIPLIER_UP_LC		(600)
+#define LATENCY_MULTIPLIER_UP_LC		(500)
 #define LATENCY_MULTIPLIER_DOWN_LC		(300)
-#define LATENCY_MULTIPLIER_UP_BC		(5000)
+#define LATENCY_MULTIPLIER_UP_BC		(1000)
 #define LATENCY_MULTIPLIER_DOWN_BC		(400)
 #define EUGOV_KTHREAD_PRIORITY			50	// 50
 #define DEFAULT_SUSPEND_MAX_FREQ_SILVER_LC 	754000
