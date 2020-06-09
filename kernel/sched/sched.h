@@ -41,6 +41,14 @@ static inline void update_cpu_load_active(struct rq *this_rq) { }
 static inline void check_for_migration(struct rq *rq, struct task_struct *p) { }
 #endif
 
+#if defined(CONFIG_SCHED_TUNE) && defined(CONFIG_CGROUP_SCHEDTUNE)
+#ifdef CONFIG_SMP
+static inline void walt_sched_energy_populated_callback(void) { }
+#else /* CONFIG_SCHED_WALT */
+extern void walt_sched_energy_populated_callback(void);
+#endif
+#endif /* CONFIG SCHEDTUNE */
+
 #ifdef CONFIG_SCHED_WALT
 extern unsigned int nr_eligible_big_tasks(int cpu);
 #else
