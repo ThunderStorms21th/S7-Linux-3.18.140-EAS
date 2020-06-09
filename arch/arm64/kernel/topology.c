@@ -347,22 +347,6 @@ static void __init parse_dt_cpu_power(void)
 				>> (SCHED_POWER_SHIFT-1)) + 1;
 }
 
-/*
- * Look for a customed capacity of a CPU in the cpu_topo_data table during the
- * boot. The update of all CPUs is in O(n^2) for heteregeneous system but the
- * function returns directly for SMP system.
- */
-static void update_cpu_power(unsigned int cpu)
-{
-	if (!cpu_capacity(cpu))
-		return;
-
-	set_power_scale(cpu, cpu_capacity(cpu) / middle_capacity);
-
-	pr_info("CPU%u: update cpu_power %lu\n",
-		cpu, arch_scale_freq_power(NULL, cpu));
-}
-
 #ifdef CONFIG_DISABLE_CPU_SCHED_DOMAIN_BALANCE
 
 int cpu_cpu_flags(void)
@@ -456,6 +440,7 @@ const struct cpumask *cpu_coregroup_mask(int cpu)
 #ifdef CONFIG_DYN_ENERGY_MODEL
 void update_cpu_power_capacity(int cpu)
 {
+	update_cpu_power(cpu);
 	update_cpu_capacity(cpu);
 }
 #endif
@@ -644,6 +629,39 @@ int get_current_cpunum(void)
        cluster_id = MPIDR_AFFINITY_LEVEL(mpidr, 1);
        cpuid = cluster_id ? core_id : core_id + 4;
        return cpuid;
+}
+
+static unsigned long *__cpu_capacity;
+#define cpu_capacity(cpu)	__cpu_capacity[cpu]
+
+/*
+ * Look for a customed capacity of a CPU in the cpu_topo_data table during the
+ * boot. The update of all CPUs is in O(n^2) for heteregeneous system but the
+ * function returns directly for SMP system.
+ */
+void update_cpu_power(unsigned int cpu)
+{
+	unsigned long min_capacity = ULONG_MAX;
+	unsigned long max_capacity = 0;
+	unsigned long capacity = 0;
+	static unsigned long middle_capacity=1;
+
+	if (!cpu_capacity(cpu))
+		return;
+
+	if (min_capacity == max_capacity)
+		return;
+	else if (4 * max_capacity < (3 * (max_capacity + min_capacity)))
+		middle_capacity = (min_capacity + max_capacity)
+				>> (SCHED_CAPACITY_SHIFT+1);
+	else
+		middle_capacity = ((max_capacity / 3)
+				>> (SCHED_CAPACITY_SHIFT-1)) + 1;
+
+	set_power_scale(cpu, cpu_capacity(cpu) / middle_capacity);
+
+	pr_info("CPU%u: update cpu_power %lu\n",
+		cpu, arch_scale_freq_power(NULL, cpu));
 }
 
 void store_cpu_topology(unsigned int cpuid)
