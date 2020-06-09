@@ -1568,6 +1568,8 @@ struct tcp_fastopen_context {
 
 static inline void tcp_init_send_head(struct sock *sk);
 
+static inline void tcp_init_send_head(struct sock *sk);
+
 /* write queue abstraction */
 static inline void tcp_write_queue_purge(struct sock *sk)
 {
