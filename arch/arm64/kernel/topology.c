@@ -45,6 +45,16 @@ unsigned long scale_cpu_capacity(struct sched_domain *sd, int cpu)
 #endif
 }
 
+unsigned long arch_scale_freq_power(struct sched_domain *sd, int cpu)
+{
+	return per_cpu(cpu_scale, cpu);
+}
+
+static void set_power_scale(unsigned int cpu, unsigned long power)
+{
+	per_cpu(cpu_scale, cpu) = power;
+}
+
 static void set_capacity_scale(unsigned int cpu, unsigned long capacity)
 {
 	per_cpu(cpu_scale, cpu) = capacity;
@@ -250,6 +260,39 @@ int get_current_cpunum(void)
        return cpuid;
 }
 
+static unsigned long *__cpu_capacity;
+#define cpu_capacity(cpu)	__cpu_capacity[cpu]
+
+/*
+ * Look for a customed capacity of a CPU in the cpu_topo_data table during the
+ * boot. The update of all CPUs is in O(n^2) for heteregeneous system but the
+ * function returns directly for SMP system.
+ */
+static void update_cpu_power(unsigned int cpu)
+{
+	unsigned long min_capacity = ULONG_MAX;
+	unsigned long max_capacity = 0;
+	unsigned long capacity = 0;
+	static unsigned long middle_capacity=1;
+	
+	if (!cpu_capacity(cpu))
+		return;
+
+	if (min_capacity == max_capacity)
+		return;
+	else if (4 * max_capacity < (3 * (max_capacity + min_capacity)))
+		middle_capacity = (min_capacity + max_capacity)
+				>> (SCHED_CAPACITY_SHIFT+1);
+	else
+		middle_capacity = ((max_capacity / 3)
+				>> (SCHED_CAPACITY_SHIFT-1)) + 1;
+
+	set_power_scale(cpu, cpu_capacity(cpu) / middle_capacity);
+
+	pr_info("CPU%u: update cpu_power %lu\n",
+		cpu, arch_scale_freq_power(NULL, cpu));
+}
+
 /*
  * cpu topology table
  */
@@ -325,6 +368,7 @@ static void update_cpu_capacity(unsigned int cpu)
 #ifdef CONFIG_DYN_ENERGY_MODEL
 void update_cpu_power_capacity(int cpu)
 {
+	update_cpu_power(cpu);
 	update_cpu_capacity(cpu);
 }
 #endif
