@@ -132,7 +132,7 @@ static int mc_timer_init(void)
 
 	cpumask_setall(&cpu);
 	cpumask_clear_cpu(MIGRATE_TARGET_CORE, &cpu);
-	set_cpus_allowed(mc_timer_thread, cpu);
+	set_cpus_allowed_ptr(mc_timer_thread, &cpu);
 
 	hrtimer_init(&mc_hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	mc_hrtimer.function = mc_hrtimer_func;
