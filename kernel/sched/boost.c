@@ -49,11 +49,13 @@ int sched_boost_handler(struct ctl_table *table, int write,
 		goto done;
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	static int boost_slot;
+	static int dynamic_stune_boost;
 	if (verify_boost_params(old_val, *data)) {
 		if (*data > 0)
-			stune_boost("top-app");
+			do_stune_boost("top-app", dynamic_stune_boost, boost_slot);
 		else
-			reset_stune_boost("top-app");
+			reset_stune_boost("top-app", boost_slot);
 	} else {
 		*data = old_val;
 		ret = -EINVAL;
