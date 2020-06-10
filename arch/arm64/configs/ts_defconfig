@@ -664,7 +664,6 @@ CONFIG_ZEN_DECISION=y
 # CPU frequency scaling drivers
 #
 CONFIG_CPUFREQ_DT=y
-CONFIG_FREQVAR_TUNE=y
 
 #
 # ARM CPU frequency scaling drivers
