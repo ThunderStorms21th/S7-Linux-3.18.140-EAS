@@ -330,7 +330,9 @@ static int drbd_thread_setup(void *arg)
 	snprintf(current->comm, sizeof(current->comm), "drbd_%c_%s",
 		 thi->name[0],
 		 resource->name);
-
+		 
+	allow_kernel_signal(DRBD_SIGKILL);
+	allow_kernel_signal(SIGXCPU);
 restart:
 	retval = thi->function(thi);
 
