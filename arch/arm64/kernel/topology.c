@@ -365,11 +365,13 @@ static void update_cpu_capacity(unsigned int cpu)
 		cpu, arch_scale_cpu_capacity(NULL, cpu));
 }
 
+#ifdef CONFIG_DYN_ENERGY_MODEL
 void update_cpu_power_capacity(int cpu)
 {
 	update_cpu_power(cpu);
 	update_cpu_capacity(cpu);
 }
+#endif
 
 static void update_siblings_masks(unsigned int cpuid)
 {
@@ -428,7 +430,12 @@ void store_cpu_topology(unsigned int cpuid)
 		 cpuid_topo->thread_id, mpidr);
 
 topology_populated:
+#ifdef CONFIG_DYN_ENERGY_MODEL
 	update_siblings_masks(cpuid);
+#else
+	update_siblings_masks(cpuid);
+	update_cpu_capacity(cpuid);
+#endif
 }
 
 static void __init reset_cpu_topology(void)
