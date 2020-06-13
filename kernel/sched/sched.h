@@ -1507,6 +1507,13 @@ static inline unsigned long cpu_util(int cpu)
 	return __cpu_util(cpu, 0);
 }
 
+struct sched_walt_cpu_load {
+	unsigned long prev_window_util;
+	unsigned long nl;
+	unsigned long pl;
+	u64 ws;
+};
+
 static inline unsigned long cpu_util_freq(int cpu)
 {
 	unsigned long util = cpu_rq(cpu)->cfs.avg.util_avg;
