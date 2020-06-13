@@ -1367,6 +1367,14 @@ config SCHED_TUNE
 	  Only if you are testing a kernel with energy-aware scheduler support,
 	  you might want to say Y here.
 
+config DYN_ENERGY_MODEL
+	bool "Enabling the Dynamic Energy Model feature"
+	default n
+	help
+	  This option makes the DYN_ENERGY_MODEL scheduling feature to true
+
+	  Say N if unsure.
+
 config SYSFS_DEPRECATED
 	bool "Enable deprecated sysfs features to support old userspace tools"
 	depends on SYSFS
