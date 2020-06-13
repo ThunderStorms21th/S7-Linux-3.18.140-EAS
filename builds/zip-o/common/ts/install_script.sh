@@ -151,12 +151,12 @@ if [ "$(file_getprop /tmp/aroma/menu.prop chk3)" == 1 ]; then
 fi
 
 ## Private mode 
-if [ "$(file_getprop /tmp/aroma/menu.prop chk9)" == 1 ]; then
-	ui_print " "
-	ui_print "@Fix for Private Mode..."
-	sh /tmp/ts/privatemode.sh
-	cp -rf /tmp/ts/private_mode/*.* /system
-fi
+# if [ "$(file_getprop /tmp/aroma/menu.prop chk9)" == 1 ]; then
+#	ui_print " "
+#	ui_print "@Fix for Private Mode..."
+#	sh /tmp/ts/privatemode.sh
+#	cp -rf /tmp/ts/private_mode/*.* /system
+# fi
 
 ## TS swap off
 if [ "$(file_getprop /tmp/aroma/menu.prop chk4)" == 1 ]; then
