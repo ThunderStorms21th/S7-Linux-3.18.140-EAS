@@ -52,8 +52,8 @@ DEFCONFIG_S7FLAT=ts-flat_defconfig
 DEFCONFIG_OREO=ts-oreo_defconfig
 DEFCONFIG_PIE=ts-pie_defconfig
 
-export K_VERSION="v3.1"
-export K_BASE="CTA4"
+export K_VERSION="v4.0"
+export K_BASE="CTD2-EAS"
 export K_NAME="ThundeRStormS-Kernel"
 export REVISION="RC"
 export KBUILD_BUILD_VERSION="1"
@@ -101,7 +101,6 @@ FUNC_BUILD_KERNEL()
 			CROSS_COMPILE=$BUILD_CROSS_COMPILE \
 			tmp_defconfig || exit -1
 	make -j$BUILD_JOB_NUMBER ARCH=$ARCH \
-			CONFIG_DEBUG_SECTION_MISMATCH=y \
 			CROSS_COMPILE=$BUILD_CROSS_COMPILE || exit -1
 	echo ""
 
