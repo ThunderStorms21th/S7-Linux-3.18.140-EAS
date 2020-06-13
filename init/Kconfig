@@ -1333,6 +1333,14 @@ config DEFAULT_USE_ENERGY_AWARE
 
 	  Say N if unsure.
 
+config DYN_ENERGY_MODEL
+	bool "Enabling the Dynamic Energy Model feature"
+	default n
+	help
+	  This option makes the DYN_ENERGY_MODEL scheduling feature to true
+
+	  Say N if unsure.
+
 config SYSFS_DEPRECATED
 	bool "Enable deprecated sysfs features to support old userspace tools"
 	depends on SYSFS

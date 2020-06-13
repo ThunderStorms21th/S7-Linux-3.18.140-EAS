@@ -433,10 +433,12 @@ const struct cpumask *cpu_coregroup_mask(int cpu)
 	return &cpu_topology[cpu].core_sibling;
 }
 
+#ifdef CONFIG_DYN_ENERGY_MODEL
 void update_cpu_power_capacity(int cpu)
 {
 	update_cpu_capacity(cpu);
 }
+#endif
 
 static void update_siblings_masks(unsigned int cpuid)
 {
@@ -672,7 +674,12 @@ void store_cpu_topology(unsigned int cpuid)
 		cpu_topology[cpuid].cluster_id, mpidr);
 
 topology_populated:
+#ifdef CONFIG_DYN_ENERGY_MODEL
 	update_siblings_masks(cpuid);
+#else
+	update_siblings_masks(cpuid);
+	update_cpu_capacity(cpuid);
+#endif
 }
 
 

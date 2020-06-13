@@ -1475,11 +1475,13 @@ unsigned long arch_scale_cpu_capacity(struct sched_domain *sd, int cpu)
 }
 #endif
 
+#ifdef CONFIG_DYN_ENERGY_MODEL
 #ifndef arch_update_cpu_capacity
 static __always_inline
 void arch_update_cpu_capacity(int cpu)
 {
 }
+#endif
 #endif
 
 #ifdef CONFIG_CPU_FREQ_GOV_SCHED
