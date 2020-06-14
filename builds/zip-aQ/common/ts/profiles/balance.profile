@@ -8,9 +8,9 @@
    chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1586000
    chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/go_hispeed_load
-   write /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/go_hispeed_load 80
+   write /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/go_hispeed_load 85
    chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/above_hispeed_delay
-   write /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/above_hispeed_delay "29000 1274000:39000"
+   write /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/above_hispeed_delay "19000 1274000:39000"
    chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/timer_rate
    write /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/timer_rate 30000
    chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/prev_timer_rate
@@ -41,10 +41,6 @@
    chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/max_freq_hysteresis
    write /sys/devices/system/cpu/cpu0/cpufreq/thunderstorm2/max_freq_hysteresis 20
    
-   # chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-   # write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor electroutil
-   # write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor pixel_schedutil
-
    # Big CPU
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor thunderstorm2
@@ -53,9 +49,9 @@
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 2288000
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/go_hispeed_load
-   write /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/go_hispeed_load 99
+   write /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/go_hispeed_load 90
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/above_hispeed_delay
-   write /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/above_hispeed_delay "79000 1248000:49000 1664000:29000"
+   write /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/above_hispeed_delay "49000 1248000:49000 1664000:29000"
    # chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/timer_rate
    write /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/timer_rate 30000
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/prev_timer_rate
@@ -86,10 +82,6 @@
    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/max_freq_hysteresis
    write /sys/devices/system/cpu/cpu4/cpufreq/thunderstorm2/max_freq_hysteresis 40
    
-   # chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
-   # write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor schedutil
-   # write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor pixel_smurfutil
-
    # CPU HOTPLUG
    # write /sys/power/cpuhotplug/enabled 1
    write /sys/module/autosmp/parameters/enabled N
@@ -100,7 +92,7 @@
    write /sys/kernel/fp_boost/enabled 0
 
    # INPUT BOOST CPU
-   write /sys/module/cpu_boost/parameters/input_boost_enabled 1
+   write /sys/module/cpu_boost/parameters/input_boost_enabled 0
 
    # GPU
    chmod 0644 /sys/devices/14ac0000.mali/max_clock

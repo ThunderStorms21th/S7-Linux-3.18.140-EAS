@@ -18,7 +18,6 @@
 <*>Ramdisk source: N935FXXU6CSK1 </*>
 <*>Kernel based on EAS </*>
 <*>Removed Samsung HMP Hotplugging </*>
-<*>Added support for NVIDIA - CPU Quiet with 3 govs </*>
 <*>Added some EAS CPU governors : </*>
    - Sched, Schedutil, PwrUtilx, BluSchedutil, Electroutil
    - Helix  Schedutil, Energy-DCFC Util, Pixel

@@ -2,8 +2,8 @@
 <b>KERNEL INFORMATION:</b>
 
 	NAME	: <b><#selectbg_g>ThundeRStormS-Kernel-Treble P</#></b>	
-	VERSION	: <b><#selectbg_g>v3.1</#></b>
-	DATE	: <b><#selectbg_g>25/03/2020</#></b>
+	VERSION	: <b><#selectbg_g>v4.0</#></b>
+	DATE	: <b><#selectbg_g>15/06/2020</#></b>
 	AUTHOR	: <b><#selectbg_g>ThundeRStormS Team</#></b>
 
 <#53a6f4><b> Only For Galaxy S7/S7Edge Treble P Vendor v1</b></#>
@@ -12,11 +12,21 @@
 <b>CHANGELOG:</b>
 
 --------------------------------------------------------------------------
-<u><b><#selectbg_g>ThunderStorms-Kernel-TP-v3.1 : 25.03.2020</#></b></u>
+<u><b><#selectbg_g>ThunderStorms-Kernel-TP-v4.0 : 15.06.2020</#></b></u>
 <*>Samsung source : N935KKKU4CTA4 </*>
 <*>Linux source : 3.18.140.8 </*>
 <*>Ramdisk source: N935FXXU6CSK1 </*>
-<*>Added Kernel Drivers RP29R0 from Android Q </*>
+<*>Kernel based on EAS </*>
+<*>Removed Samsung HMP Hotplugging </*>
+<*>Added some EAS CPU governors : </*>
+   - Sched, Schedutil, PwrUtilx, BluSchedutil, Electroutil
+   - Helix  Schedutil, Energy-DCFC Util, Pixel
+   Added updaedts for this all govs and mods by @nalas.
+<*>Updated Dynamic FSYNC to v2.0 by Boeffla </*>
+<*>Added BLOCK_UNWANTED_FILES : </*>
+   - fde, lspeed, nfsinjector, lkt
+   This apps can make Your phone dead !!!
+<*>Added Kernel Drivers RP29R0 from Android Q (thx to Anan) </*>
 <*>Fixed device for Pokemon Go, Cod Mobile and similar games  </*>
 <*>ThunderStorm CPU gov updated to v2.1 : added max_freq_hysteresis </*>
 <*>ThunderTweaks v1.0.5.1 </*>
