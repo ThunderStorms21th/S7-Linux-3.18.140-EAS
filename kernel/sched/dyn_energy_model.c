@@ -14,6 +14,8 @@
  *	}
  */
 
+#define pr_fmt(fmt) "sched-energy: " fmt
+
 #include <linux/gfp.h>
 #include <linux/of.h>
 #include <linux/printk.h>
