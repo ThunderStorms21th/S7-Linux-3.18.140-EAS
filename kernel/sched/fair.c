@@ -5671,6 +5671,11 @@ normalize_energy(int energy_diff)
 	return (energy_diff < 0) ? -normalized_nrg : normalized_nrg;
 }
 
+static inline bool filter_energy(void)
+{
+	return sched_feat(ENERGY_FILTER);
+}
+
 static inline int
 energy_diff(struct energy_env *eenv)
 {
@@ -5679,6 +5684,8 @@ energy_diff(struct energy_env *eenv)
 
 	/* Conpute "absolute" energy diff */
 	__energy_diff(eenv);
+	if (!filter_energy())
+		return eenv->nrg.diff;
 
 	/* Return energy diff when boost margin is 0 */
 #ifdef CONFIG_CGROUP_SCHEDTUNE
