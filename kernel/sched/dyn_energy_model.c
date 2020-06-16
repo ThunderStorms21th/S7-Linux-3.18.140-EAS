@@ -96,8 +96,9 @@ static int sched_energy_probe(struct platform_device *pdev)
 		sge_l0 = sge_array[cpu][SD_LEVEL0];
 		if (sge_l0 && sge_l0->nr_cap_states > 0) {
 			int i;
+			int ncapstates = sge_l0->nr_cap_states;
 
-			for (i = 0; i < sge_l0->nr_cap_states; i++) {
+			for (i = 0; i < ncapstates; i++) {
 				int sd_level;
 				unsigned long freq, cap;
 
@@ -124,6 +125,17 @@ static int sched_energy_probe(struct platform_device *pdev)
 					cpu, freq, sge_l0->cap_states[i].cap,
 					sge_l0->cap_states[i].power);
 			}
+
+			dev_info(&pdev->dev,
+				"cpu=%d eff=%d [freq=%ld cap=%ld power_d0=%ld] -> [freq=%ld cap=%ld power_d0=%ld]\n",
+				cpu, efficiency,
+				sge_l0->cap_states[0].frequency,
+				sge_l0->cap_states[0].cap,
+				sge_l0->cap_states[0].power,
+				sge_l0->cap_states[ncapstates - 1].frequency,
+				sge_l0->cap_states[ncapstates - 1].cap,
+				sge_l0->cap_states[ncapstates - 1].power
+				);
 		}
 
 		dev_dbg(&pdev->dev,
