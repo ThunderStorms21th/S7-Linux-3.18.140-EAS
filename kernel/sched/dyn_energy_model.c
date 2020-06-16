@@ -45,6 +45,7 @@ static int sched_energy_probe(struct platform_device *pdev)
 	int cpu;
 	unsigned long *max_frequencies = NULL;
 	int ret;
+	bool is_sge_valid = false;
 
 	max_frequencies = kmalloc_array(nr_cpu_ids, sizeof(unsigned long),
 					GFP_KERNEL);
@@ -152,6 +153,7 @@ static int sched_energy_probe(struct platform_device *pdev)
 				);
 		}
 
+		is_sge_valid = true;
 		dev_dbg(&pdev->dev,
 			"cpu=%d efficiency=%d max_frequency=%ld max_efficiency=%d cpu_max_capacity=%ld\n",
 			cpu, efficiency, max_frequencies[cpu], max_efficiency,
