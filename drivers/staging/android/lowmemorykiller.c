@@ -44,15 +44,13 @@
 
 #define CREATE_TRACE_POINTS
 #include "trace/lowmemorykiller.h"
+#include <trace/almk.h>
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/swap.h>
 #include <linux/fs.h>
 #include <linux/cpuset.h>
 #include <linux/vmpressure.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/almk.h>
 
 #ifdef CONFIG_HIGHMEM
 #define _ZONE ZONE_HIGHMEM
@@ -664,13 +662,13 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 				(long)(PAGE_SIZE / 1024),
 			     global_page_state(NR_FILE_PAGES) *
 				(long)(PAGE_SIZE / 1024),
-			     sc->gfp_mask);
-
+			     sc->gfp_mask,
+     			     free);
+		
 		if (lowmem_debug_level >= 2 && selected_oom_score_adj == 0) {
 			show_mem(SHOW_MEM_FILTER_NODES);
-			dump_tasks(NULL, NULL);
+			// dump_tasks(NULL, NULL);
 		}
-			     free);
 		show_memory();
 		
 		lowmem_deathpending_timeout = jiffies + HZ;
@@ -706,7 +704,7 @@ static struct shrinker lowmem_shrinker = {
 static int __init lowmem_init(void)
 {
 	register_shrinker(&lowmem_shrinker);
-	vmpressure_notifier_register(&lmk_vmpr_nb);
+	// vmpressure_notifier_register(&lmk_vmpr_nb);
 	return 0;
 }
 
