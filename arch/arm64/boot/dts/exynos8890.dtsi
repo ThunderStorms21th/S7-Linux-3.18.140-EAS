@@ -202,9 +202,9 @@
 				desc = "boot cluster cpu sleep";
 				compatible = "exynos,idle-state";
 				arm,psci-suspend-param = <0x0010000>;
-				entry-latency-us = <35>;
-				exit-latency-us = <90>;
-				min-residency-us = <750>;
+				entry-latency-us = <65>;
+				exit-latency-us = <140>;
+				min-residency-us = <1750>;
 				status = "okay";
 			};
 
@@ -212,9 +212,9 @@
 				desc = "non-boot cluster cpu sleep";
 				compatible = "exynos,idle-state";
 				arm,psci-suspend-param = <0x0010000>;
-				entry-latency-us = <30>;
-				exit-latency-us = <75>;
-				min-residency-us = <2000>;
+				entry-latency-us = <130>;
+				exit-latency-us = <175>;
+				min-residency-us = <3000>;
 				status = "okay";
 			};
 		};
@@ -249,9 +249,7 @@
 					2600000 2265
 				>;
 				idle-cost-data = <
-					50
-					0
-					0
+					50 50 0 0
 				>;
 			};
 			CPU_COST_0: core-cost0 {
@@ -272,9 +270,7 @@
 					1586000 158
 				>;
 				idle-cost-data = <
-					10
-					0
-					0
+					20 20 0 0
 				>;
 			};
 			CLUSTER_COST_1: cluster-cost1 {
@@ -304,9 +300,7 @@
 					2600000 736
 				>;
 				idle-cost-data = <
-					50
-					50
-					0
+					50 50 0 0
 				>;
 			};
 			CLUSTER_COST_0: cluster-cost0 {
@@ -327,9 +321,7 @@
 					1586000 69
 				>;
 				idle-cost-data = <
-					30
-					30
-					0
+					50 50 0 0
 				>;
 			};
 		};
