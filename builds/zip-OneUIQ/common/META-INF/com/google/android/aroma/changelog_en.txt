@@ -18,6 +18,7 @@
 <*>Ramdisk source: N935FXXU6CSK1 </*>
 <*>Kernel based on EAS </*>
 <*>Removed Samsung HMP Hotplugging </*>
+<*>Updated Low Memory Killer - new features </*>
 <*>Added some EAS CPU governors : </*>
    - Sched, Schedutil, PwrUtilx, BluSchedutil, Electroutil
    - Helix  Schedutil, Energy-DCFC Util, Pixel
