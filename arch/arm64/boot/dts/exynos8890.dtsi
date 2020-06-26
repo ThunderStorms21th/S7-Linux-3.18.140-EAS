@@ -300,7 +300,7 @@
 					2600000 736
 				>;
 				idle-cost-data = <
-					50 50 0 0
+					15 15 0 0
 				>;
 			};
 			CLUSTER_COST_0: cluster-cost0 {
@@ -321,7 +321,7 @@
 					1586000 69
 				>;
 				idle-cost-data = <
-					50 50 0 0
+					5 5 0 0
 				>;
 			};
 		};
