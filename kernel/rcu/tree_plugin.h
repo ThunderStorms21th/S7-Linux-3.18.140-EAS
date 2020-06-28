@@ -397,6 +397,7 @@ void rcu_read_unlock_special(struct task_struct *t)
 			raw_spin_unlock_irqrestore(&rnp->lock, flags);
 		}
 
+#ifdef CONFIG_RCU_BOOST
 		/*
 		 * Unboost if we were boosted.
 		 * Disable preemption to make sure completion is signalled
