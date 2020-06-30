@@ -36,10 +36,10 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 
-#define UP_RATE_LIMIT				400	// 1000
-#define DOWN_RATE_LIMIT				300	// 1000
-#define UP_RATE_LIMIT_BC			400	// 1000
-#define DOWN_RATE_LIMIT_BC			400	// 1000
+#define UP_RATE_LIMIT				600	    // 1000
+#define DOWN_RATE_LIMIT				600	    // 1000
+#define UP_RATE_LIMIT_BC			1000	// 1000
+#define DOWN_RATE_LIMIT_BC			600	    // 1000
 
 /* Frequency cap for target_load1 in KHz */
 #define LOAD1_CAP				754000
@@ -55,7 +55,7 @@ unsigned long boosted_cpu_util(int cpu);
 #define TARGET_LOAD_1_BIGC 			25	// 15
 #define TARGET_LOAD_2_BIGC 			60	// 50
 
-#define NRGGOV_KTHREAD_PRIORITY			50	// 25
+#define NRGGOV_KTHREAD_PRIORITY		50	// 25
 
 struct nrggov_tunables {
 	struct gov_attr_set attr_set;

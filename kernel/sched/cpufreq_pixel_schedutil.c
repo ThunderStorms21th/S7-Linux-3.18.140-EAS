@@ -31,14 +31,14 @@
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define LATENCY_MULTIPLIER			(1000)
-#define LATENCY_MULTIPLIER_UP_LC		(400)
-#define LATENCY_MULTIPLIER_UP_BC		(400)
-#define LATENCY_MULTIPLIER_DOWN_LC		(300)
-#define LATENCY_MULTIPLIER_DOWN_BC		(400)
+#define LATENCY_MULTIPLIER              (1000)
+#define LATENCY_MULTIPLIER_UP_LC		(600)
+#define LATENCY_MULTIPLIER_UP_BC		(1000)
+#define LATENCY_MULTIPLIER_DOWN_LC		(600)
+#define LATENCY_MULTIPLIER_DOWN_BC		(600)
 #define DEFAULT_HISPEED_FREQ			858000	// 0
 #define DEFAULT_HISPEED_FREQ_BC			1040000	// 0
-#define SUGOV_KTHREAD_PRIORITY			50	// 50
+#define SUGOV_KTHREAD_PRIORITY			50	    // 50
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;

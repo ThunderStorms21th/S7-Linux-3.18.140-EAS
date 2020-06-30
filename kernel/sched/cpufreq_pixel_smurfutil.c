@@ -51,11 +51,11 @@
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define LATENCY_MULTIPLIER			(100000)
-#define LATENCY_MULTIPLIER_UP_LC		(40000)
-#define LATENCY_MULTIPLIER_UP_BC		(40000)
-#define LATENCY_MULTIPLIER_DOWN_LC		(30000)
-#define LATENCY_MULTIPLIER_DOWN_BC		(40000)
+#define LATENCY_MULTIPLIER              (100000)
+#define LATENCY_MULTIPLIER_UP_LC		(60000)
+#define LATENCY_MULTIPLIER_UP_BC		(100000)
+#define LATENCY_MULTIPLIER_DOWN_LC		(60000)
+#define LATENCY_MULTIPLIER_DOWN_BC		(60000)
 #define SMUGOV_KTHREAD_PRIORITY			50	// 50
 
 struct smugov_tunables {
