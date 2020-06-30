@@ -27,7 +27,7 @@
 #include "sched.h"
 #include "tune.h"
 
-#define RATE_LIMIT				1000
+#define RATE_LIMIT                  1000
 
 #define BIT_SHIFT_1 				3
 #define BIT_SHIFT_1_2 				4
@@ -41,20 +41,20 @@
 #define TARGET_LOAD_1_BIGC 			25
 #define TARGET_LOAD_2_BIGC 			50
 
-#define LATENCY_MULTIPLIER			(400)
-#define LATENCY_MULTIPLIER_BC			(400)
+#define LATENCY_MULTIPLIER			(600)
+#define LATENCY_MULTIPLIER_BC       (1000)
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 
 #define DEFAULT_SUSPEND_MAX_FREQ_SILVER		442000
 #define DEFAULT_SUSPEND_MAX_FREQ_GOLD		650000
-#define DEFAULT_HISPEED_FREQ			858000
+#define DEFAULT_HISPEED_FREQ                858000
 #define DEFAULT_SUSPEND_MAX_FREQ_SILVER_BC	416000
 #define DEFAULT_SUSPEND_MAX_FREQ_GOLD_BC	624000
-#define DEFAULT_HISPEED_FREQ_BC			1040000
+#define DEFAULT_HISPEED_FREQ_BC             1040000
 
-#define SMUGOV_KTHREAD_PRIORITY			50	//50
+#define SMUGOV_KTHREAD_PRIORITY             50	//50
 
 struct smugov_tunables {
 	struct gov_attr_set attr_set;

@@ -30,11 +30,11 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #define LATENCY_MULTIPLIER			(1000)
-#define ACGOV_KTHREAD_PRIORITY	50			// 50
-#define UP_RATE_LIMIT_US_LC			(400)
-#define UP_RATE_LIMIT_US_BIGC		(400)
-#define DOWN_RATE_LIMIT_US_LC			(300)
-#define DOWN_RATE_LIMIT_US_BIGC		(400)
+#define ACGOV_KTHREAD_PRIORITY      50			// 50
+#define UP_RATE_LIMIT_US_LC			(600)
+#define UP_RATE_LIMIT_US_BIGC		(1000)
+#define DOWN_RATE_LIMIT_US_LC       (600)
+#define DOWN_RATE_LIMIT_US_BIGC		(600)
 
 #define OVERWRITE_RATE_LIMIT_US
 #ifdef CONFIG_ARCH_MSM8998

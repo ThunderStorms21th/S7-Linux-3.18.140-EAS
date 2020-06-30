@@ -29,11 +29,11 @@
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define SUGOV_KTHREAD_PRIORITY			50	// 50
-#define CONFIG_vladutil_DOWN_RATE_LIMIT		(30000)
-#define CONFIG_vladutil_UP_RATE_LIMIT		(40000)
-#define CONFIG_vladutil_UP_RATE_LIMIT_BC	(40000)
-#define CONFIG_vladutil_DOWN_RATE_LIMIT_BC	(40000)
+#define SUGOV_KTHREAD_PRIORITY              50	// 50
+#define CONFIG_vladutil_DOWN_RATE_LIMIT		(60000)
+#define CONFIG_vladutil_UP_RATE_LIMIT		(60000)
+#define CONFIG_vladutil_UP_RATE_LIMIT_BC	(100000)
+#define CONFIG_vladutil_DOWN_RATE_LIMIT_BC	(60000)
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;

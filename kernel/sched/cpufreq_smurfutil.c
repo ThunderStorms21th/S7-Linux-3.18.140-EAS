@@ -27,7 +27,7 @@
 #include "sched.h"
 #include "tune.h"
 
-#define RATE_LIMIT				2000
+#define RATE_LIMIT                  2000
 
 #define BIT_SHIFT_1 				4	// 9
 #define BIT_SHIFT_2 				4	// 9
@@ -39,25 +39,25 @@
 #define TARGET_LOAD_1_BIGC 			25
 #define TARGET_LOAD_2_BIGC 			70
 
-#define LATENCY_MULTIPLIER			(400)
-#define LATENCY_MULTIPLIER_BC			(400)
-#define LATENCY_MULTIPLIER_UP_LC		(400)
-#define LATENCY_MULTIPLIER_UP_BC		(400)
-#define LATENCY_MULTIPLIER_DOWN_LC		(300)
-#define LATENCY_MULTIPLIER_DOWN_BC		(400)
+#define LATENCY_MULTIPLIER              (1000)
+#define LATENCY_MULTIPLIER_BC			(1000)
+#define LATENCY_MULTIPLIER_UP_LC		(600)
+#define LATENCY_MULTIPLIER_UP_BC		(1000)
+#define LATENCY_MULTIPLIER_DOWN_LC		(600)
+#define LATENCY_MULTIPLIER_DOWN_BC		(600)
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 
 #define DEFAULT_SUSPEND_MAX_FREQ_SILVER		442000
 #define DEFAULT_SUSPEND_MAX_FREQ_GOLD		650000
-#define DEFAULT_HISPEED_FREQ			858000
+#define DEFAULT_HISPEED_FREQ                858000
 #define DEFAULT_SUSPEND_MAX_FREQ_SILVER_BC	416000
 #define DEFAULT_SUSPEND_MAX_FREQ_GOLD_BC	728000
-#define DEFAULT_HISPEED_FREQ_BC			1040000
-#define DEFAULT_SUSPEND_CAPACITY_FACTOR 10
+#define DEFAULT_HISPEED_FREQ_BC             1040000
+#define DEFAULT_SUSPEND_CAPACITY_FACTOR     10
 
-#define SMUGOV_KTHREAD_PRIORITY			50	// 25
+#define SMUGOV_KTHREAD_PRIORITY             50	// 25
 
 
 struct smugov_tunables {

@@ -39,14 +39,14 @@
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
 #undef LATENCY_MULTIPLIER
-#define LATENCY_MULTIPLIER			(1000)
-#define LATENCY_MULTIPLIER_LC_UP		(400)	// 2000
-#define LATENCY_MULTIPLIER_BC_UP		(400)	// 2000
-#define LATENCY_MULTIPLIER_LC_DOWN		(300)	// 2000
-#define LATENCY_MULTIPLIER_BC_DOWN		(400)	// 2000
+#define LATENCY_MULTIPLIER              (1000)
+#define LATENCY_MULTIPLIER_LC_UP		(600)	// 2000
+#define LATENCY_MULTIPLIER_BC_UP		(1000)	// 2000
+#define LATENCY_MULTIPLIER_LC_DOWN		(600)	// 2000
+#define LATENCY_MULTIPLIER_BC_DOWN		(600)	// 2000
 #define DKGOV_KTHREAD_PRIORITY			50	// 50
 
-#define BOOST_PERC					15
+#define BOOST_PERC                      15
 #define BOOST_PERC_BC					10
 #define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(80000 * NSEC_PER_USEC))
 
