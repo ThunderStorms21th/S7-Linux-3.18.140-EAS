@@ -33,12 +33,12 @@ unsigned long boosted_cpu_util(int cpu);
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define LATENCY_MULTIPLIER			(1000)
+#define LATENCY_MULTIPLIER              (1000)
 #define LATENCY_MULTIPLIER_BC_UP		(1500)
-#define LATENCY_MULTIPLIER_BC_DOWN		(400)
-#define LATENCY_MULTIPLIER_LC_UP		(400)
-#define LATENCY_MULTIPLIER_LC_DOWN		(400)
-#define SUGOV_KTHREAD_PRIORITY	50
+#define LATENCY_MULTIPLIER_BC_DOWN		(600)
+#define LATENCY_MULTIPLIER_LC_UP		(600)
+#define LATENCY_MULTIPLIER_LC_DOWN		(600)
+#define SUGOV_KTHREAD_PRIORITY          50
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;

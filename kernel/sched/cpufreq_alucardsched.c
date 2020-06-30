@@ -37,20 +37,20 @@
 #define cpufreq_driver_fast_switch(x, y) 0
 #define cpufreq_enable_fast_switch(x)
 #define cpufreq_disable_fast_switch(x)
-#define ACGOV_KTHREAD_PRIORITY	50
+#define ACGOV_KTHREAD_PRIORITY      50
 
-#define UP_RATE_LIMIT_US_LC			(30000)
-#define UP_RATE_LIMIT_US_BIGC		(300000)
-#define DOWN_RATE_LIMIT_US_LC			(20000)
-#define DOWN_RATE_LIMIT_US_BIGC		(20000)
-#define FREQ_RESPONSIVENESS_LC			1066000
-#define FREQ_RESPONSIVENESS_BC			1040000
+#define UP_RATE_LIMIT_US_LC         (60000)
+#define UP_RATE_LIMIT_US_BIGC       (100000)
+#define DOWN_RATE_LIMIT_US_LC       (60000)
+#define DOWN_RATE_LIMIT_US_BIGC		(60000)
+#define FREQ_RESPONSIVENESS_LC      1066000
+#define FREQ_RESPONSIVENESS_BC      1040000
 #define PUMP_INC_STEP_AT_MIN_FREQ	6
 #define PUMP_INC_STEP				3
 #define PUMP_DEC_STEP_AT_MIN_FREQ	3
 #define PUMP_DEC_STEP				1
 #define BOOST_PERC					10
-#define BOOST_PERC_BC			5			// 10
+#define BOOST_PERC_BC               5	// 10
 
 #ifdef CONFIG_STATE_NOTIFIER
 #define DEFAULT_RATE_LIMIT_SUSP_NS ((s64)(80000 * NSEC_PER_USEC))
