@@ -15,7 +15,7 @@
 static bool schedtune_initialized = false;
 #endif
 
-int sysctl_sched_cfs_boost __read_mostly;
+unsigned int sysctl_sched_cfs_boost __read_mostly = 0;
 
 extern struct target_nrg schedtune_target_nrg;
 
@@ -741,18 +741,17 @@ schedtune_init_cgroups(void)
 #else /* CONFIG_CGROUP_SCHEDTUNE */
 
 int
-schedtune_accept_deltas(int nrg_delta, int cap_delta,
-			struct task_struct *task)
+schedtune_accept_deltas(int nrg_delta, int cap_delta)
 {
 	/* Optimal (O) region */
 	if (nrg_delta < 0 && cap_delta > 0) {
-		trace_sched_tune_filter(nrg_delta, cap_delta, 0, 0, 1, 0);
+		trace_printk("schedtune_filter: region=O ngain=0 pgain=0 nrg_payoff=-1");
 		return INT_MAX;
 	}
 
 	/* Suboptimal (S) region */
 	if (nrg_delta > 0 && cap_delta < 0) {
-		trace_sched_tune_filter(nrg_delta, cap_delta, 0, 0, -1, 5);
+		trace_printk("schedtune_filter: region=S ngain=0 pgain=0 nrg_payoff=1");
 		return -INT_MAX;
 	}
 
@@ -947,8 +946,6 @@ nodata:
 	return -EINVAL;
 }
 postcore_initcall(schedtune_init);
-
-unsigned int sysctl_sched_cfs_boost __read_mostly = 0;
 
 /* Performance Boost region (B) threshold params */
 static int perf_boost_idx;
