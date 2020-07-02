@@ -6293,16 +6293,16 @@ static void init_sched_energy(int cpu, struct sched_domain *sd,
 	sge->nr_idle_states = fn(cpu)->nr_idle_states;
 	sge->nr_idle_states_below = nr_idle_states_below;
 	sge->nr_cap_states = fn(cpu)->nr_cap_states;
-	sge->idle_states = (struct idle_state_sg *)
+	sge->idle_states = (struct idle_state *)
 			   ((void *)&sge->cap_states +
 			    sizeof(sge->cap_states));
 	sge->cap_states = (struct capacity_state *)
 			  ((void *)&sge->cap_states +
 			   sizeof(sge->cap_states) +
 			   sge->nr_idle_states *
-			   sizeof(struct idle_state_sg));
+			   sizeof(struct idle_state));
 	memcpy(sge->idle_states, fn(cpu)->idle_states,
-	       sge->nr_idle_states*sizeof(struct idle_state_sg));
+	       sge->nr_idle_states*sizeof(struct idle_state));
 	memcpy(sge->cap_states, fn(cpu)->cap_states,
 	       sge->nr_cap_states*sizeof(struct capacity_state));
 }
@@ -6864,7 +6864,7 @@ static int __sdt_alloc(const struct cpumask *cpu_map)
 			*per_cpu_ptr(sdd->sgc, j) = sgc;
 
 			sge = kzalloc_node(sizeof(struct sched_group_energy) +
-				nr_idle_states*sizeof(struct idle_state_sg) +
+				nr_idle_states*sizeof(struct idle_state) +
 				nr_cap_states*sizeof(struct capacity_state),
 				GFP_KERNEL, cpu_to_node(j));
 
