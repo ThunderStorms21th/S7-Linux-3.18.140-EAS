@@ -15,7 +15,7 @@
 static bool schedtune_initialized = false;
 #endif
 
-unsigned int sysctl_sched_cfs_boost __read_mostly = 0;
+unsigned int sysctl_sched_cfs_boost __read_mostly;
 
 extern struct target_nrg schedtune_target_nrg;
 
@@ -49,59 +49,6 @@ threshold_gains[] = {
 	{ 5, 1 }, /*   < 90% */
 	{ 5, 0 }  /* <= 100% */
 };
-
-static int
-__schedtune_accept_deltas(int nrg_delta, int cap_delta,
-			  int perf_boost_idx, int perf_constrain_idx)
-{
-	int payoff = -INT_MAX;
-	int gain_idx = -1;
-
-	/* Performance Boost (B) region */
-	if (nrg_delta >= 0 && cap_delta > 0)
-		gain_idx = perf_boost_idx;
-	/* Performance Constraint (C) region */
-	else if (nrg_delta < 0 && cap_delta <= 0)
-		gain_idx = perf_constrain_idx;
-
-	/* Default: reject schedule candidate */
-	if (gain_idx == -1)
-		return payoff;
-
-	/*
-	 * Evaluate "Performance Boost" vs "Energy Increase"
-	 *
-	 * - Performance Boost (B) region
-	 *
-	 *   Condition: nrg_delta > 0 && cap_delta > 0
-	 *   Payoff criteria:
-	 *     cap_gain / nrg_gain  < cap_delta / nrg_delta =
-	 *     cap_gain * nrg_delta < cap_delta * nrg_gain
-	 *   Note that since both nrg_gain and nrg_delta are positive, the
-	 *   inequality does not change. Thus:
-	 *
-	 *     payoff = (cap_delta * nrg_gain) - (cap_gain * nrg_delta)
-	 *
-	 * - Performance Constraint (C) region
-	 *
-	 *   Condition: nrg_delta < 0 && cap_delta < 0
-	 *   payoff criteria:
-	 *     cap_gain / nrg_gain  > cap_delta / nrg_delta =
-	 *     cap_gain * nrg_delta < cap_delta * nrg_gain
-	 *   Note that since nrg_gain > 0 while nrg_delta < 0, the
-	 *   inequality change. Thus:
-	 *
-	 *     payoff = (cap_delta * nrg_gain) - (cap_gain * nrg_delta)
-	 *
-	 * This means that, in case of same positive defined {cap,nrg}_gain
-	 * for both the B and C regions, we can use the same payoff formula
-	 * where a positive value represents the accept condition.
-	 */
-	payoff  = cap_delta * threshold_gains[gain_idx].nrg_gain;
-	payoff -= nrg_delta * threshold_gains[gain_idx].cap_gain;
-
-	return payoff;
-}
 
 #ifdef CONFIG_CGROUP_SCHEDTUNE
 
@@ -162,37 +109,6 @@ root_schedtune = {
 	.perf_constrain_idx = 0,
 	.prefer_idle = 0,
 };
-
-int
-schedtune_accept_deltas(int nrg_delta, int cap_delta,
-			struct task_struct *task)
-{
-	struct schedtune *ct;
-	int perf_boost_idx;
-	int perf_constrain_idx;
-
-	/* Optimal (O) region */
-	if (nrg_delta < 0 && cap_delta > 0) {
-		trace_sched_tune_filter(nrg_delta, cap_delta, 0, 0, 1, 0);
-		return INT_MAX;
-	}
-
-	/* Suboptimal (S) region */
-	if (nrg_delta > 0 && cap_delta < 0) {
-		trace_sched_tune_filter(nrg_delta, cap_delta, 0, 0, -1, 5);
-		return -INT_MAX;
-	}
-
-	/* Get task specific perf Boost/Constraints indexes */
-	rcu_read_lock();
-	ct = task_schedtune(task);
-	perf_boost_idx = ct->perf_boost_idx;
-	perf_constrain_idx = ct->perf_constrain_idx;
-	rcu_read_unlock();
-
-	return __schedtune_accept_deltas(nrg_delta, cap_delta,
-			perf_boost_idx, perf_constrain_idx);
-}
 
 /*
  * Maximum number of boost groups to support
@@ -761,35 +677,6 @@ schedtune_accept_deltas(int nrg_delta, int cap_delta)
 
 #endif /* CONFIG_CGROUP_SCHEDTUNE */
 
-int
-sysctl_sched_cfs_boost_handler(struct ctl_table *table, int write,
-			       void __user *buffer, size_t *lenp,
-			       loff_t *ppos)
-{
-	int ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
-	unsigned threshold_idx;
-	int boost_pct;
-
-	if (ret || !write)
-		return ret;
-
-	if (sysctl_sched_cfs_boost < -100 || sysctl_sched_cfs_boost > 100)
-		return -EINVAL;
-	boost_pct = sysctl_sched_cfs_boost;
-
-	/*
-	 * Update threshold params for Performance Boost (B)
-	 * and Performance Constraint (C) regions.
-	 * The current implementatio uses the same cuts for both
-	 * B and C regions.
-	 */
-	threshold_idx = clamp(boost_pct, 0, 99) / 10;
-	perf_boost_idx = threshold_idx;
-	perf_constrain_idx = threshold_idx;
-
-	return 0;
-}
-
 #ifdef CONFIG_SCHED_DEBUG
 static void
 schedtune_test_nrg(unsigned long delta_pwr)
@@ -953,47 +840,12 @@ static int perf_boost_idx;
 /* Performance Constraint region (C) threshold params */
 static int perf_constrain_idx;
 
-/**
- * Performance-Energy (P-E) Space thresholds constants
- */
-struct threshold_params {
-	int nrg_gain;
-	int cap_gain;
-};
-
-/*
- * System specific P-E space thresholds constants
- */
-static struct threshold_params
-threshold_gains[] = {
-	{ 0, 4 }, /* >=  0% */
-	{ 1, 4 }, /* >= 10% */
-	{ 2, 4 }, /* >= 20% */
-	{ 3, 4 }, /* >= 30% */
-	{ 4, 4 }, /* >= 40% */
-	{ 4, 3 }, /* >= 50% */
-	{ 4, 2 }, /* >= 60% */
-	{ 4, 1 }, /* >= 70% */
-	{ 4, 0 }, /* >= 80% */
-	{ 4, 0 }  /* >= 90% */
-};
-
-/*
- * System energy normalization constants
- */
-struct target_nrg {
-	unsigned long min_power;
-	unsigned long max_power;
-	unsigned long nrg_shift;
-	unsigned long nrg_mult;
-};
-
 /*
  * Target specific system energy normalization constants
  * NOTE: These values are specific for ARM TC2 and they are derived from the
  *       energy model data defined in: arch/arm/kernel/topology.c
  */
-static struct target_nrg
+struct target_nrg
 schedtune_target_nrg = {
 
 	/*
@@ -1056,7 +908,7 @@ schedtune_normalize_energy(int energy_diff)
 	return normalized_nrg;
 }
 
-static int
+int
 __schedtune_accept_deltas(int nrg_delta, int cap_delta,
 		int perf_boost_idx, int perf_constrain_idx) {
 	int energy_payoff;
@@ -1568,29 +1420,6 @@ struct cgroup_subsys schedtune_cgrp_subsys = {
 	.legacy_cftypes	= files,
 	.early_init	= 1,
 };
-
-#else /* CONFIG_CGROUP_SCHEDTUNE */
-
-int
-schedtune_accept_deltas(int nrg_delta, int cap_delta) {
-
-	/* Optimal (O) region */
-	if (nrg_delta < 0 && cap_delta > 0) {
-		trace_printk("schedtune_filter: region=O ngain=0 pgain=0 nrg_payoff=-1");
-		return INT_MAX;
-	}
-
-	/* Suboptimal (S) region */
-	if (nrg_delta > 0 && cap_delta < 0) {
-		trace_printk("schedtune_filter: region=S ngain=0 pgain=0 nrg_payoff=1");
-		return -INT_MAX;
-	}
-
-	return __schedtune_accept_deltas(nrg_delta, cap_delta,
-			perf_boost_idx, perf_constrain_idx);
-
-}
-
 #endif /* CONFIG_CGROUP_SCHEDTUNE */
 
 int

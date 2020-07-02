@@ -9,6 +9,8 @@
 struct target_nrg {
 	unsigned long min_power;
 	unsigned long max_power;
+	unsigned long nrg_shift;
+	unsigned long nrg_mult;
 	struct reciprocal_value rdiv;
 };
 
