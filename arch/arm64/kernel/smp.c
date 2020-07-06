@@ -54,6 +54,7 @@
 #include <asm/tlbflush.h>
 #include <asm/ptrace.h>
 
+#include <trace/events/power.h>
 #define CREATE_TRACE_POINTS
 #include <trace/events/ipi.h>
 
@@ -122,7 +123,7 @@ int __cpu_up(unsigned int cpu, struct task_struct *idle)
 	}
 
 	secondary_data.stack = NULL;
-	restore_pcpu_tick(cpu);
+	// restore_pcpu_tick(cpu);
 
 	return ret;
 }
@@ -283,7 +284,7 @@ void __cpu_die(unsigned int cpu)
 	if (!op_cpu_kill(cpu))
 		pr_warn("CPU%d may not have shut down cleanly\n", cpu);
 
-	save_pcpu_tick(cpu);
+	// save_pcpu_tick(cpu);
 }
 
 /*
@@ -723,8 +724,10 @@ static int cpufreq_callback(struct notifier_block *nb,
 	if (freq->flags & CPUFREQ_CONST_LOOPS)
 		return NOTIFY_OK;
 
-	if (val == CPUFREQ_PRECHANGE)
+	if (val == CPUFREQ_PRECHANGE) {
 		scale_freq_capacity(cpu, freq->new, max);
+		trace_cpu_capacity(capacity_curr_of(cpu), cpu);
+    }
 
 	return NOTIFY_OK;
 }
@@ -767,7 +770,7 @@ static int __init register_cpufreq_notifier(void)
 						CPUFREQ_POLICY_NOTIFIER);
 }
 core_initcall(register_cpufreq_notifier);
-#endif
+#endif /* CONFIG_CPU_FREQ */
 
 static void flush_all_cpu_cache(void *info)
 {
