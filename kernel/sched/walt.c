@@ -64,7 +64,7 @@ static unsigned int max_possible_freq = 1;
 static unsigned int min_max_freq = 1;
 
 static unsigned int max_capacity = 1024;
-static unsigned int min_capacity = 1024; /* 1024 */
+static unsigned int min_capacity = 1; /* 1024 */
 static unsigned int max_load_scale_factor = 1024;
 static unsigned int max_possible_capacity = 1024;
 
