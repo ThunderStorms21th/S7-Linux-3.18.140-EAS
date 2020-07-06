@@ -141,6 +141,7 @@
 			reg = <0x0 0x100>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@101 {
 			device_type = "cpu";
@@ -148,6 +149,7 @@
 			reg = <0x0 0x101>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@102 {
 			device_type = "cpu";
@@ -155,6 +157,7 @@
 			reg = <0x0 0x102>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@103 {
 			device_type = "cpu";
@@ -162,6 +165,7 @@
 			reg = <0x0 0x103>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_BOOT>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
 		cpu@0 {
 			device_type = "cpu";
@@ -169,6 +173,7 @@
 			reg = <0x0 0x0>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@1 {
 			device_type = "cpu";
@@ -176,6 +181,7 @@
 			reg = <0x0 0x1>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@2 {
 			device_type = "cpu";
@@ -183,6 +189,7 @@
 			reg = <0x0 0x2>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@3 {
 			device_type = "cpu";
@@ -190,6 +197,7 @@
 			reg = <0x0 0x3>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
+			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 
 		idle-states {
@@ -213,6 +221,119 @@
 				exit-latency-us = <75>;
 				min-residency-us = <2000>;
 				status = "okay";
+			};
+		};
+
+		energy-costs {
+			CPU_COST_1: core-cost1 {
+				busy-cost-data = <
+					312000 89
+					416000 119
+					520000 149
+					624000 179
+					728000 210
+					832000 255
+					936000 305
+					1040000 359
+					1144000 430
+					1248000 496
+					1352000 581
+					1456000 658
+					1560000 759
+					1664000 869
+					1768000 968
+					1872000 1096
+					1976000 1234
+					2080000 1355
+					2184000 1513
+					2288000 1716
+					2392000 1900
+					2496000 2058
+					2600000 2265
+				>;
+				idle-cost-data = <
+					50
+					0
+					0
+				>;
+			};
+			CPU_COST_0: core-cost0 {
+				busy-cost-data = <
+					234000 7
+					338000 10
+					442000 14
+					546000 19
+					650000 26
+					754000 33
+					858000 43
+					962000 53
+					1066000 63
+					1170000 76
+					1274000 95
+					1378000 113
+					1482000 133
+					1586000 158
+				>;
+				idle-cost-data = <
+					10
+					0
+					0
+				>;
+			};
+			CLUSTER_COST_1: cluster-cost1 {
+				busy-cost-data = <
+					312000 10
+					416000 12
+					520000 15
+					624000 19
+					728000 24
+					832000 29
+					936000 36
+					1040000 44
+					1144000 54
+					1248000 66
+					1352000 81
+					1456000 98
+					1560000 120
+					1664000 146
+					1768000 178
+					1872000 215
+					1976000 252
+					2080000 304
+					2184000 366
+					2288000 441
+					2392000 526
+					2496000 626
+					2600000 736
+				>;
+				idle-cost-data = <
+					50
+					50
+					0
+				>;
+			};
+			CLUSTER_COST_0: cluster-cost0 {
+				busy-cost-data = <
+					234000 3
+					338000 6
+					442000 8
+					546000 10
+					650000 13
+					754000 18
+					858000 21
+					962000 25
+					1066000 29
+					1170000 35
+					1274000 42
+					1378000 47
+					1482000 58
+					1586000 69
+				>;
+				idle-cost-data = <
+					30
+					30
+					0
+				>;
 			};
 		};
 	};
