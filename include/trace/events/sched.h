@@ -881,6 +881,13 @@ TRACE_EVENT(sched_contrib_scale_f,
 		  __entry->cpu_scale_factor)
 );
 
+#ifdef CONFIG_SCHED_WALT
+extern unsigned int sysctl_sched_use_walt_cpu_util;
+extern unsigned int sysctl_sched_use_walt_task_util;
+extern unsigned int walt_ravg_window;
+extern bool walt_disabled;
+#endif
+
 /*
  * Tracepoint for accounting sched averages for tasks.
  */
@@ -893,8 +900,10 @@ TRACE_EVENT(sched_load_avg_task,
 	TP_STRUCT__entry(
 		__array( char,	comm,	TASK_COMM_LEN		)
 		__field( pid_t,	pid				)
+		__field( int,	cpu				)
 		__field( unsigned long,	load			)
 		__field( unsigned long,	utilization		)
+		__field( unsigned long,	util_avg		)
 		__field( unsigned int,	runnable_avg_sum	)
 		__field( unsigned int,	running_avg_sum		)
 		__field( unsigned int,	avg_period		)
@@ -903,16 +912,18 @@ TRACE_EVENT(sched_load_avg_task,
 	TP_fast_assign(
 		memcpy(__entry->comm, tsk->comm, TASK_COMM_LEN);
 		__entry->pid			= tsk->pid;
+		__entry->cpu			= task_cpu(tsk);
 		__entry->load			= avg->load_avg_contrib;
 		__entry->utilization		= avg->utilization_avg_contrib;
+		__entry->util_avg		= avg->util_avg;
 		__entry->runnable_avg_sum	= avg->runnable_avg_sum;
 		__entry->running_avg_sum	= avg->running_avg_sum;
 		__entry->avg_period		= avg->avg_period;
 	),
 
-	TP_printk("comm=%s pid=%d load=%lu utilization=%lu runnable_avg_sum=%u"
+	TP_printk("comm=%s pid=%d load=%lu load_avg=%lu utilization=%lu runnable_avg_sum=%u"
 		  " running_avg_sum=%u avg_period=%u",
-		  __entry->comm, __entry->pid, __entry->load, __entry->utilization,
+		  __entry->comm, __entry->pid, __entry->cpu, __entry->load, __entry->util_avg, __entry->utilization,
 		  (unsigned int)__entry->runnable_avg_sum,
 		  (unsigned int)__entry->running_avg_sum,
 		  (unsigned int)__entry->avg_period)
@@ -1146,6 +1157,168 @@ TRACE_EVENT(sched_energy_diff,
 		__entry->capb, __entry->capa, __entry->capd,
 		__entry->nrgn, __entry->nrgp)
 );
+
+/*
+ * Tracepoint for system overutilized flag
+ */
+TRACE_EVENT(sched_overutilized,
+
+	TP_PROTO(bool overutilized),
+
+	TP_ARGS(overutilized),
+
+	TP_STRUCT__entry(
+		__field( bool,	overutilized	)
+	),
+
+	TP_fast_assign(
+		__entry->overutilized	= overutilized;
+	),
+
+	TP_printk("overutilized=%d",
+		__entry->overutilized ? 1 : 0)
+);
+
+#ifdef CONFIG_SCHED_WALT
+struct rq;
+
+TRACE_EVENT(walt_update_task_ravg,
+
+	TP_PROTO(struct task_struct *p, struct rq *rq, int evt,
+						u64 wallclock, u64 irqtime),
+
+	TP_ARGS(p, rq, evt, wallclock, irqtime),
+
+	TP_STRUCT__entry(
+		__array(	char,	comm,   TASK_COMM_LEN	)
+		__field(	pid_t,	pid			)
+		__field(	pid_t,	cur_pid			)
+		__field(	u64,	wallclock		)
+		__field(	u64,	mark_start		)
+		__field(	u64,	delta_m			)
+		__field(	u64,	win_start		)
+		__field(	u64,	delta			)
+		__field(	u64,	irqtime			)
+		__field(        int,    evt			)
+		__field(unsigned int,	demand			)
+		__field(unsigned int,	sum			)
+		__field(	 int,	cpu			)
+		__field(	u64,	cs			)
+		__field(	u64,	ps			)
+		__field(unsigned long,	util			)
+		__field(	u32,	curr_window		)
+		__field(	u32,	prev_window		)
+		__field(	u32,	active_windows		)
+	),
+
+	TP_fast_assign(
+		__entry->wallclock      = wallclock;
+		__entry->win_start      = rq->window_start;
+		__entry->delta          = (wallclock - rq->window_start);
+		__entry->evt            = evt;
+		__entry->cpu            = rq->cpu;
+		__entry->cur_pid        = rq->curr->pid;
+		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->pid            = p->pid;
+		__entry->mark_start     = p->ravg.mark_start;
+		__entry->delta_m        = (wallclock - p->ravg.mark_start);
+		__entry->demand         = p->ravg.demand;
+		__entry->sum            = p->ravg.sum;
+		__entry->irqtime        = irqtime;
+		__entry->cs             = rq->curr_runnable_sum;
+		__entry->ps             = rq->prev_runnable_sum;
+		__entry->util           = rq->prev_runnable_sum << SCHED_LOAD_SHIFT;
+		do_div(__entry->util, walt_ravg_window);
+		__entry->curr_window	= p->ravg.curr_window;
+		__entry->prev_window	= p->ravg.prev_window;
+		__entry->active_windows	= p->ravg.active_windows;
+	),
+
+	TP_printk("wc %llu ws %llu delta %llu event %d cpu %d cur_pid %d task %d (%s) ms %llu delta %llu demand %u sum %u irqtime %llu"
+		" cs %llu ps %llu util %lu cur_window %u prev_window %u active_wins %u"
+		, __entry->wallclock, __entry->win_start, __entry->delta,
+		__entry->evt, __entry->cpu, __entry->cur_pid,
+		__entry->pid, __entry->comm, __entry->mark_start,
+		__entry->delta_m, __entry->demand,
+		__entry->sum, __entry->irqtime,
+		__entry->cs, __entry->ps, __entry->util,
+		__entry->curr_window, __entry->prev_window,
+		  __entry->active_windows
+		)
+);
+
+TRACE_EVENT(walt_update_history,
+
+	TP_PROTO(struct rq *rq, struct task_struct *p, u32 runtime, int samples,
+			int evt),
+
+	TP_ARGS(rq, p, runtime, samples, evt),
+
+	TP_STRUCT__entry(
+		__array(	char,	comm,   TASK_COMM_LEN	)
+		__field(	pid_t,	pid			)
+		__field(unsigned int,	runtime			)
+		__field(	 int,	samples			)
+		__field(	 int,	evt			)
+		__field(	 u64,	demand			)
+		__field(unsigned int,	walt_avg		)
+		__field(unsigned int,	pelt_avg		)
+		__array(	 u32,	hist, RAVG_HIST_SIZE_MAX)
+		__field(	 int,	cpu			)
+	),
+
+	TP_fast_assign(
+		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->pid            = p->pid;
+		__entry->runtime        = runtime;
+		__entry->samples        = samples;
+		__entry->evt            = evt;
+		__entry->demand         = p->ravg.demand;
+		__entry->walt_avg	= (__entry->demand << 10);
+		do_div(__entry->walt_avg, walt_ravg_window);
+		__entry->pelt_avg	= p->se.avg.util_avg;
+		memcpy(__entry->hist, p->ravg.sum_history,
+					RAVG_HIST_SIZE_MAX * sizeof(u32));
+		__entry->cpu            = rq->cpu;
+	),
+
+	TP_printk("%d (%s): runtime %u samples %d event %d demand %llu"
+		" walt %u pelt %u (hist: %u %u %u %u %u) cpu %d",
+		__entry->pid, __entry->comm,
+		__entry->runtime, __entry->samples, __entry->evt,
+		__entry->demand,
+		__entry->walt_avg,
+		__entry->pelt_avg,
+		__entry->hist[0], __entry->hist[1],
+		__entry->hist[2], __entry->hist[3],
+		__entry->hist[4], __entry->cpu)
+);
+
+TRACE_EVENT(walt_migration_update_sum,
+
+	TP_PROTO(struct rq *rq, struct task_struct *p),
+
+	TP_ARGS(rq, p),
+
+	TP_STRUCT__entry(
+		__field(int,		cpu			)
+		__field(int,		pid			)
+		__field(	u64,	cs			)
+		__field(	u64,	ps			)
+	),
+
+	TP_fast_assign(
+		__entry->cpu		= cpu_of(rq);
+		__entry->cs		= rq->curr_runnable_sum;
+		__entry->ps		= rq->prev_runnable_sum;
+		__entry->pid		= p->pid;
+	),
+
+	TP_printk("cpu %d: cs %llu ps %llu pid %d",
+		  __entry->cpu, __entry->cs, __entry->ps,
+		   __entry->pid)
+);
+#endif /* CONFIG_SCHED_WALT */
 
 /*
  * Tracepoint for schedtune_tasks_update

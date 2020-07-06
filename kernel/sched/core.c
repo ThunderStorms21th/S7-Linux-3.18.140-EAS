@@ -111,6 +111,7 @@
 #include <trace/events/sched.h>
 
 #define HEAVY_TASK_LOAD_THRESHOLD 1000
+#include "walt.h"
 
 void start_bandwidth_timer(struct hrtimer *period_timer, ktime_t period)
 {
@@ -371,6 +372,12 @@ static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
 	}
 }
 
+struct rq *
+lock_rq_of(struct task_struct *p, unsigned long *flags)
+{
+	return task_rq_lock(p, flags);
+}
+
 static void __task_rq_unlock(struct rq *rq)
 	__releases(rq->lock)
 {
@@ -384,6 +391,12 @@ task_rq_unlock(struct rq *rq, struct task_struct *p, unsigned long *flags)
 {
 	raw_spin_unlock(&rq->lock);
 	raw_spin_unlock_irqrestore(&p->pi_lock, *flags);
+}
+
+void
+unlock_rq_of(struct rq *rq, struct task_struct *p, unsigned long *flags)
+{
+	task_rq_unlock(rq, p, flags);
 }
 
 /*

@@ -152,7 +152,7 @@ struct boost_groups {
 };
 
 /* Boost groups affecting each CPU in the system */
-static DEFINE_PER_CPU(struct boost_groups, cpu_boost_groups);
+DEFINE_PER_CPU(struct boost_groups, cpu_boost_groups);
 
 static void
 schedtune_cpu_update(int cpu)
@@ -235,7 +235,10 @@ schedtune_tasks_update(struct task_struct *p, int cpu, int idx, int task_count)
 	int tasks = bg->group[idx].tasks + task_count;
 
 	/* Update boosted tasks count while avoiding to make it negative */
-	bg->group[idx].tasks = max(0, tasks);
+	if (task_count < 0 && bg->group[idx].tasks <= -task_count)
+		bg->group[idx].tasks = 0;
+	else
+		bg->group[idx].tasks += task_count;
 
 	trace_sched_tune_tasks_update(p, cpu, tasks, idx,
 			bg->group[idx].boost, bg->boost_max);
@@ -626,11 +629,23 @@ schedtune_css_free(struct cgroup_subsys_state *css)
 	kfree(st);
 }
 
+static void
+schedtune_exit(struct cgroup_subsys_state *css,
+		struct cgroup_subsys_state *old_css,
+		struct task_struct *tsk)
+{
+	struct schedtune *old_st = css_st(old_css);
+	int cpu = task_cpu(tsk);
+
+	schedtune_tasks_update(tsk, cpu, old_st->idx, -1);
+}
+
 struct cgroup_subsys schedtune_cgrp_subsys = {
 	.css_alloc	= schedtune_css_alloc,
 	.css_free	= schedtune_css_free,
 	.can_attach     = schedtune_can_attach,
 	.cancel_attach  = schedtune_cancel_attach,
+	.exit		= schedtune_exit,
 	.legacy_cftypes	= files,
 	.early_init	= 1,
 };
@@ -961,40 +976,6 @@ __schedtune_accept_deltas(int nrg_delta, int cap_delta,
  * EAS scheduler tunables for task groups.
  */
 
-/* SchdTune tunables for a group of tasks */
-struct schedtune {
-	/* SchedTune CGroup subsystem */
-	struct cgroup_subsys_state css;
-
-	/* Boost group allocated ID */
-	int idx;
-
-	/* Boost value for tasks on that SchedTune CGroup */
-	int boost;
-
-	/* Performance Boost (B) region threshold params */
-	int perf_boost_idx;
-
-	/* Performance Constraint (C) region threshold params */
-	int perf_constrain_idx;
-
-};
-
-static inline struct schedtune *css_st(struct cgroup_subsys_state *css)
-{
-	return css ? container_of(css, struct schedtune, css) : NULL;
-}
-
-static inline struct schedtune *task_schedtune(struct task_struct *tsk)
-{
-	return css_st(task_css(tsk, schedtune_cgrp_id));
-}
-
-static inline struct schedtune *parent_st(struct schedtune *st)
-{
-	return css_st(st->css.parent);
-}
-
 /*
  * SchedTune root control group
  * The root control group is used to defined a system-wide boosting tuning,
@@ -1004,13 +985,6 @@ static inline struct schedtune *parent_st(struct schedtune *st)
  * By default, system-wide boosting is disabled, i.e. no boosting is applied
  * to all tasks not into a child control group.
  */
-static struct schedtune
-root_schedtune = {
-	.boost			= 0,
-	.perf_boost_idx 	= 0,
-	.perf_constrain_idx 	= 0,
-};
-
 int
 schedtune_accept_deltas(int nrg_delta, int cap_delta, struct task_struct *task) {
 	struct schedtune *ct;
@@ -1054,12 +1028,6 @@ schedtune_accept_deltas(int nrg_delta, int cap_delta, struct task_struct *task) 
  */
 #define BOOSTGROUPS_COUNT 16
 
-/* Array of configured boostgroups */
-static struct schedtune *allocated_group[BOOSTGROUPS_COUNT] = {
-	&root_schedtune,
-	NULL,
-};
-
 /* SchedTune boost groups
  * Each CPU in the system could be affected by multiple boost groups, for
  * example when a CPU has two RUNNABLE tasks beloging to two different boost
@@ -1070,163 +1038,6 @@ static struct schedtune *allocated_group[BOOSTGROUPS_COUNT] = {
  * groups, here we use a simple array to keep track of the metrics required to
  * compute the maximum per-CPU boosting value.
  */
-struct boost_groups {
-	/* Maximum boost value for all RUNNABLE tasks on a CPU */
-	unsigned boost_max;
-	struct {
-		/* The boost for tasks on that boost group */
-		unsigned boost;
-		/* Count of RUNNABLE tasks on that boost group */
-		unsigned tasks;
-	} group[BOOSTGROUPS_COUNT];
-};
-
-/* Boost groups affecting each CPU in the system */
-DEFINE_PER_CPU(struct boost_groups, cpu_boost_groups);
-
-static void
-schedtune_cpu_update(int cpu)
-{
-	struct boost_groups *bg;
-	unsigned boost_max;
-	int idx;
-
-	bg = &per_cpu(cpu_boost_groups, cpu);
-
-	/* The root boost group is always active */
-	boost_max = bg->group[0].boost;
-	for (idx = 1; idx < BOOSTGROUPS_COUNT; ++idx) {
-		/*
-		 * A boost group affects a CPU only if it has
-		 * RUNNABLE tasks on that CPU
-		 */
-		if (bg->group[idx].tasks == 0)
-			continue;
-		boost_max = max(boost_max, bg->group[idx].boost);
-	}
-
-	bg->boost_max = boost_max;
-}
-
-static int
-schedtune_boostgroup_update(int idx, int boost)
-{
-	struct boost_groups *bg;
-	int cur_boost_max;
-	int old_boost;
-	int cpu;
-
-	/* Update per CPU boost groups */
-	for_each_possible_cpu(cpu) {
-		bg = &per_cpu(cpu_boost_groups, cpu);
-
-		/*
-		 * Keep track of current boost values to compute the per CPU
-		 * maximum only when it has been affected by the new value of
-		 * the updated boost group
-		 */
-		cur_boost_max = bg->boost_max;
-		old_boost = bg->group[idx].boost;
-
-		/* Update the boost value of this boost group */
-		bg->group[idx].boost = boost;
-
-		/* Check if this update increase current max */
-		if (boost > cur_boost_max && bg->group[idx].tasks) {
-			bg->boost_max = boost;
-			trace_sched_tune_boostgroup_update(cpu, 1, bg->boost_max);
-			continue;
-		}
-
-		/* Check if this update has decreased current max */
-		if (cur_boost_max == old_boost && old_boost > boost) {
-			schedtune_cpu_update(cpu);
-			trace_sched_tune_boostgroup_update(cpu, -1, bg->boost_max);
-			continue;
-		}
-
-		trace_sched_tune_boostgroup_update(cpu, 0, bg->boost_max);
-	}
-
-	return 0;
-}
-
-static inline void
-schedtune_tasks_update(struct task_struct *p, int cpu, int idx, int task_count)
-{
-	struct boost_groups *bg;
-	int tasks;
-
-	bg = &per_cpu(cpu_boost_groups, cpu);
-
-	/* Update boosted tasks count while avoiding to make it negative */
-	if (task_count < 0 && bg->group[idx].tasks <= -task_count)
-		bg->group[idx].tasks = 0;
-	else
-		bg->group[idx].tasks += task_count;
-
-	/* Boost group activation or deactivation on that RQ */
-	tasks = bg->group[idx].tasks;
-	if (tasks == 1 || tasks == 0)
-		schedtune_cpu_update(cpu);
-
-	trace_sched_tune_tasks_update(p, cpu, tasks, idx,
-			bg->group[idx].boost, bg->boost_max);
-
-}
-
-/*
- * NOTE: This function must be called while holding the lock on the CPU RQ
- */
-void schedtune_enqueue_task(struct task_struct *p, int cpu)
-{
-	struct schedtune *st;
-	int idx;
-
-	/*
-	 * When a task is marked PF_EXITING by do_exit() it's going to be
-	 * dequeued and enqueued multiple times in the exit path.
-	 * Thus we avoid any further update, since we do not want to change
-	 * CPU boosting while the task is exiting.
-	 */
-	if (p->flags & PF_EXITING)
-		return;
-
-	/* Get task boost group */
-	rcu_read_lock();
-	st = task_schedtune(p);
-	idx = st->idx;
-	rcu_read_unlock();
-
-	schedtune_tasks_update(p, cpu, idx, 1);
-}
-
-/*
- * NOTE: This function must be called while holding the lock on the CPU RQ
- */
-void schedtune_dequeue_task(struct task_struct *p, int cpu)
-{
-	struct schedtune *st;
-	int idx;
-
-	/*
-	 * When a task is marked PF_EXITING by do_exit() it's going to be
-	 * dequeued and enqueued multiple times in the exit path.
-	 * Thus we avoid any further update, since we do not want to change
-	 * CPU boosting while the task is exiting.
-	 * The last dequeue will be done by cgroup exit() callback.
-	 */
-	if (p->flags & PF_EXITING)
-		return;
-
-	/* Get task boost group */
-	rcu_read_lock();
-	st = task_schedtune(p);
-	idx = st->idx;
-	rcu_read_unlock();
-
-	schedtune_tasks_update(p, cpu, idx, -1);
-}
 
 int schedtune_taskgroup_boost(struct task_struct *p)
 {
@@ -1241,185 +1052,6 @@ int schedtune_taskgroup_boost(struct task_struct *p)
 	return task_boost;
 }
 
-int schedtune_cpu_boost(int cpu)
-{
-	struct boost_groups *bg;
-	bg = &per_cpu(cpu_boost_groups, cpu);
-	return 	bg->boost_max;
-}
-
-static u64
-boost_read(struct cgroup_subsys_state *css, struct cftype *cft)
-{
-	struct schedtune *st = css_st(css);
-	return st->boost;
-}
-
-static int
-boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
-			  u64 boost)
-{
-	struct schedtune *st = css_st(css);
-	int err = 0;
-
-	if (boost < 0 || boost > 100) {
-		err = -EINVAL;
-		goto out;
-	}
-
-	st->boost = boost;
-	if (css == &root_schedtune.css)
-		sysctl_sched_cfs_boost = boost;
-
-	if (boost == 100)
-		boost = 99;
-
-	/* Performance Boost (B) region threshold params */
-	st->perf_boost_idx  = boost;
-	st->perf_boost_idx /= 10;
-
-	/* Performance Constraint (C) region threshold params */
-	st->perf_constrain_idx  = 100 - boost;
-	st->perf_constrain_idx /= 10;
-
-	/* Update CPU boost */
-	schedtune_boostgroup_update(st->idx, st->boost);
-
-	trace_sched_tune_config(st->boost,
-			threshold_gains[st->perf_boost_idx].nrg_gain,
-			threshold_gains[st->perf_boost_idx].cap_gain,
-			threshold_gains[st->perf_constrain_idx].nrg_gain,
-			threshold_gains[st->perf_constrain_idx].cap_gain);
-
-out:
-	return err;
-}
-
-static struct cftype files[] = {
-	{
-		.name = "boost",
-		.read_u64 = boost_read,
-		.write_u64 = boost_write,
-	},
-	{ }	/* terminate */
-};
-
-static int
-schedtune_boostgroup_init(struct schedtune *st)
-{
-	struct boost_groups *bg;
-	int cpu;
-
-	/* Keep track of allocated boost group */
-	allocated_group[st->idx] = st;
-
-	/* Initialize the per CPU boost groups */
-	for_each_possible_cpu(cpu) {
-		bg = &per_cpu(cpu_boost_groups, cpu);
-		bg->group[st->idx].boost = 0;
-		bg->group[st->idx].tasks = 0;
-	}
-
-	return 0;
-}
-
-static int
-schedtune_init(void)
-{
-	struct boost_groups *bg;
-	int cpu;
-
-	/* Initialize the per CPU boost groups */
-	for_each_possible_cpu(cpu) {
-		bg = &per_cpu(cpu_boost_groups, cpu);
-		memset(bg, 0 , sizeof(struct boost_groups));
-	}
-
-	pr_info("  schedtune configured to support %d boost groups\n",
-			BOOSTGROUPS_COUNT);
-	return 0;
-}
-
-static struct cgroup_subsys_state *
-schedtune_css_alloc(struct cgroup_subsys_state *parent_css)
-{
-	struct schedtune *st;
-	int idx;
-
-	if (!parent_css) {
-		schedtune_init();
-		return &root_schedtune.css;
-	}
-
-	/* Allows only single level hierachies */
-	if (parent_css != &root_schedtune.css) {
-		pr_err("Nested SchedTune boosting groups not allowed\n");
-		return ERR_PTR(-ENOMEM);
-	}
-
-	/* Allows only a limited number of boosting groups */
-	for (idx = 1; idx < BOOSTGROUPS_COUNT; ++idx)
-		if (allocated_group[idx] == NULL)
-			break;
-	if (idx == BOOSTGROUPS_COUNT) {
-		pr_err("Trying to create more than %d SchedTune boosting groups\n",
-				BOOSTGROUPS_COUNT);
-		return ERR_PTR(-ENOSPC);
-	}
-
-	st = kzalloc(sizeof(*st), GFP_KERNEL);
-	if (!st)
-		goto out;
-
-	/* Initialize per CPUs boost group support */
-	st->idx = idx;
-	if (schedtune_boostgroup_init(st))
-		goto release;
-
-	return &st->css;
-
-release:
-	kfree(st);
-out:
-	return ERR_PTR(-ENOMEM);
-}
-
-static void
-schedtune_boostgroup_release(struct schedtune *st)
-{
-	/* Reset this group boost */
-	schedtune_boostgroup_update(st->idx, 0);
-
-	/* Keep track of allocated boost group */
-	allocated_group[st->idx] = NULL;
-}
-
-static void
-schedtune_css_free(struct cgroup_subsys_state *css)
-{
-	struct schedtune *st = css_st(css);
-	schedtune_boostgroup_release(st);
-	kfree(st);
-}
-
-static void
-schedtune_exit(struct cgroup_subsys_state *css,
-		struct cgroup_subsys_state *old_css,
-		struct task_struct *tsk)
-{
-	struct schedtune *old_st = css_st(old_css);
-	int cpu = task_cpu(tsk);
-
-	schedtune_tasks_update(tsk, cpu, old_st->idx, -1);
-}
-
-struct cgroup_subsys schedtune_cgrp_subsys = {
-	.css_alloc	= schedtune_css_alloc,
-	.css_free	= schedtune_css_free,
-	.exit		= schedtune_exit,
-	.legacy_cftypes	= files,
-	.early_init	= 1,
-};
 #endif /* CONFIG_CGROUP_SCHEDTUNE */
 
 int

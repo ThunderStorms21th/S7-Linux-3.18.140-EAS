@@ -32,6 +32,7 @@
 #include <linux/task_work.h>
 #include <linux/of.h>
 #include <linux/cpuset.h>
+#include <linux/module.h>
 
 #include <trace/events/sched.h>
 #ifdef CONFIG_HMP_VARIABLE_SCALE
@@ -48,6 +49,7 @@
 
 #include "sched.h"
 #include "tune.h"
+#include "walt.h"
 
 /*
  * Targeted preemption latency for CPU-bound tasks:
@@ -63,6 +65,18 @@
  */
 unsigned int sysctl_sched_latency = 10000000ULL;
 unsigned int normalized_sysctl_sched_latency = 10000000ULL;
+
+unsigned int sysctl_sched_is_big_little = 0;
+unsigned int sysctl_sched_sync_hint_enable = 1;
+unsigned int sysctl_sched_initial_task_util = 0;
+unsigned int sysctl_sched_cstate_aware = 1;
+
+#ifdef CONFIG_SCHED_WALT
+unsigned int sysctl_sched_use_walt_cpu_util = 1;
+unsigned int sysctl_sched_use_walt_task_util = 1;
+__read_mostly unsigned int sysctl_sched_walt_cpu_high_irqload =
+    (10 * NSEC_PER_MSEC);
+#endif
 
 /*
  * The initial- and re-scaling of tunables is configurable
