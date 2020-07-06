@@ -36,6 +36,8 @@
 #include <linux/rkp_cfp.h>
 #endif
 
+#include "linux/version.h"
+
 /* ExySp: Lock for core switch processing */
 #ifdef CONFIG_SECURE_OS_BOOSTER_API
 struct mutex core_switch_lock;
