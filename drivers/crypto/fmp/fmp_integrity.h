@@ -12,6 +12,6 @@
 #ifndef __FMP_INTEGRITY_H__
 #define __FMP_INTEGRITY_H__
 
-int do_fips_fmp_integrity_check(void);
+int __init do_fips_fmp_integrity_check(void);
 
 #endif

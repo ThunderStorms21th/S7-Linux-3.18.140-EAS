@@ -11,7 +11,7 @@
 #ifndef _CRYPTO_FMP_HELPER_H
 #define _CRYPTO_FMP_HELPER_H
 
-unsigned long get_fmp_symbol_address(const char *symname);
+unsigned long __init get_fmp_symbol_address(const char *symname);
 
 #endif	/* _CRYPTO_FMP_HELPER_H */
 
