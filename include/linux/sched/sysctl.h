@@ -100,7 +100,7 @@ extern unsigned int sysctl_sched_cfs_bandwidth_slice;
 #endif
 
 #ifdef CONFIG_SCHED_TUNE
-extern unsigned int sysctl_sched_cfs_boost;
+extern int sysctl_sched_cfs_boost;
 int sysctl_sched_cfs_boost_handler(struct ctl_table *table, int write,
 				   void __user *buffer, size_t *length,
 				   loff_t *ppos);
