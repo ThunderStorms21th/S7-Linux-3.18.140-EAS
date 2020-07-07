@@ -4538,7 +4538,7 @@ static inline void hrtick_update(struct rq *rq)
 }
 #endif
 
-static unsigned int capacity_margin = 1280; /* ~20% margin */
+unsigned int capacity_margin = 1280; /* ~20% margin */
 
 #ifdef CONFIG_SMP
 static bool cpu_overutilized(int cpu);
