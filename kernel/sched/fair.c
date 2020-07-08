@@ -142,6 +142,12 @@ unsigned int __read_mostly sysctl_sched_shares_window = 10000000UL;
 unsigned int sysctl_sched_cfs_bandwidth_slice = 5000UL;
 #endif
 
+/*
+ * The margin used when comparing utilization with CPU capacity:
+ * util * 1024 < capacity * margin
+ */
+unsigned int capacity_margin = 1280; /* ~20% */
+
 static inline void update_load_add(struct load_weight *lw, unsigned long inc)
 {
 	lw->weight += inc;
@@ -4561,8 +4567,6 @@ static inline void hrtick_update(struct rq *rq)
 }
 #endif
 
-unsigned int capacity_margin = 1280; /* ~20% margin */
-
 #ifdef CONFIG_SMP
 static bool cpu_overutilized(int cpu);
 static unsigned long get_cpu_usage(int cpu);
@@ -7048,6 +7052,27 @@ static int hmp_is_family_in_fastest_domain(struct task_struct *p)
 #endif /* CONFIG_SCHED_HMP */
 
 /*
+ * Disable WAKE_AFFINE in the case where task @p doesn't fit in the
+ * capacity of either the waking CPU @cpu or the previous CPU @prev_cpu.
+ *
+ * In that case WAKE_AFFINE doesn't make sense and we'll let
+ * BALANCE_WAKE sort things out.
+ */
+static int wake_cap(struct task_struct *p, int cpu, int prev_cpu)
+{
+	long min_cap, max_cap;
+
+	min_cap = min(capacity_orig_of(prev_cpu), capacity_orig_of(cpu));
+	max_cap = cpu_rq(cpu)->rd->max_cpu_capacity.val;
+
+	/* Minimum capacity is close to max, no need to abort wake_affine */
+	if (max_cap - min_cap < max_cap >> 3)
+		return 0;
+
+	return min_cap * 1024 < task_util(p) * capacity_margin;
+}
+
+/*
  * select_task_rq_fair: Select target runqueue for the waking task in domains
  * that have the 'sd_flag' flag set. In practice, this is SD_BALANCE_WAKE,
  * SD_BALANCE_FORK, or SD_BALANCE_EXEC.
@@ -7078,7 +7103,9 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 		want_sibling = false;
 
 	if (sd_flag & SD_BALANCE_WAKE && want_sibling)
-		want_affine = cpumask_test_cpu(cpu, tsk_cpus_allowed(p));
+		want_affine = (!wake_wide(p) && !wake_cap(p, cpu, prev_cpu)
+			       && cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
+			      || energy_aware();
 
 	rcu_read_lock();
 	for_each_domain(cpu, tmp) {
