@@ -5584,6 +5584,17 @@ boosted_task_utilization(struct task_struct *task)
 
 #endif /* CONFIG_SCHED_TUNE */
 
+static inline unsigned long task_util(struct task_struct *p)
+{
+#ifdef CONFIG_SCHED_WALT
+	if (!walt_disabled && sysctl_sched_use_walt_task_util) {
+		unsigned long demand = p->ravg.demand;
+		return (demand << 10) / walt_ravg_window;
+	}
+#endif
+	return p->se.avg.util_avg;
+}
+
 static inline bool __task_fits(struct task_struct *p, int cpu, int usage)
 {
 	unsigned long capacity = capacity_of(cpu);
@@ -7063,7 +7074,7 @@ static int wake_cap(struct task_struct *p, int cpu, int prev_cpu)
 	long min_cap, max_cap;
 
 	min_cap = min(capacity_orig_of(prev_cpu), capacity_orig_of(cpu));
-	max_cap = cpu_rq(cpu)->rd->max_cpu_capacity.val;
+	max_cap = cpu_rq(cpu)->rd->max_cpu_capacity;
 
 	/* Minimum capacity is close to max, no need to abort wake_affine */
 	if (max_cap - min_cap < max_cap >> 3)
@@ -7126,14 +7137,14 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 			sd = tmp;
 	}
 
-	if (affine_sd && cpu != prev_cpu && wake_affine(affine_sd, pprev_cpu, sync))
+	if (affine_sd && cpu != prev_cpu && wake_affine(affine_sd, p, prev_cpu, sync))
 		prev_cpu = cpu;
 
 	if (sd_flag & SD_BALANCE_WAKE && want_sibling) {
 		if (energy_aware() && !cpu_rq(cpu)->rd->overutilized)
 			new_cpu = energy_aware_wake_cpu(p, prev_cpu);
 		else
-			new_cpu = select_idle_sibling(p, prev_cpu);
+			new_cpu = select_idle_sibling(p, prev_cpu, new_cpu);
 		goto unlock;
 	}
 
