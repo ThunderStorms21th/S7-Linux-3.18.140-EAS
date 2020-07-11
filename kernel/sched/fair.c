@@ -6845,6 +6845,7 @@ static struct sched_entity *hmp_get_heaviest_task(struct sched_entity* se, int m
 	struct sched_entity *max_se = se;
 	unsigned long int max_ratio = se->avg.load_avg_ratio;
 	const struct cpumask *hmp_target_mask = NULL;
+    int i;
 
 	if (migrate_up) {
 		struct hmp_domain *hmp;
@@ -6867,87 +6868,6 @@ static struct sched_entity *hmp_get_heaviest_task(struct sched_entity* se, int m
 				max_se = se;
 				max_ratio = se->avg.load_avg_ratio;
 			}
-
-			/*
-			 * Case B) Non latency sensitive tasks on IDLE CPUs.
-			 *
-			 * Find an optimal backup IDLE CPU for non latency
-			 * sensitive tasks.
-			 *
-			 * Looking for:
-			 * - minimizing the capacity_orig,
-			 *   i.e. preferring LITTLE CPUs
-			 * - favoring shallowest idle states
-			 *   i.e. avoid to wakeup deep-idle CPUs
-			 *
-			 * The following code path is used by non latency
-			 * sensitive tasks if IDLE CPUs are available. If at
-			 * least one of such CPUs are available it sets the
-			 * best_idle_cpu to the most suitable idle CPU to be
-			 * selected.
-			 *
-			 * If idle CPUs are available, favour these CPUs to
-			 * improve performances by spreading tasks.
-			 * Indeed, the energy_diff() computed by the caller
-			 * will take care to ensure the minimization of energy
-			 * consumptions without affecting performance.
-			 */
-			if (idle_cpu(i)) {
-				int idle_idx = idle_get_state_idx(cpu_rq(i));
-
-				/* Select idle CPU with lower cap_orig */
-				if (capacity_orig > best_idle_min_cap_orig)
-					continue;
-
-				/*
-				 * Skip CPUs in deeper idle state, but only
-				 * if they are also less energy efficient.
-				 * IOW, prefer a deep IDLE LITTLE CPU vs a
-				 * shallow idle big CPU.
-				 */
-				if (sysctl_sched_cstate_aware &&
-				    best_idle_cstate <= idle_idx)
-					continue;
-
-				/* Keep track of best idle CPU */
-				best_idle_min_cap_orig = capacity_orig;
-				best_idle_cstate = idle_idx;
-				best_idle_cpu = i;
-				continue;
-			}
-
-			/*
-			 * Case C) Non latency sensitive tasks on ACTIVE CPUs.
-			 *
-			 * Pack tasks in the most energy efficient capacities.
-			 *
-			 * This task packing strategy prefers more energy
-			 * efficient CPUs (i.e. pack on smaller maximum
-			 * capacity CPUs) while also trying to spread tasks to
-			 * run them all at the lower OPP.
-			 *
-			 * This assumes for example that it's more energy
-			 * efficient to run two tasks on two CPUs at a lower
-			 * OPP than packing both on a single CPU but running
-			 * that CPU at an higher OPP.
-			 *
-			 * Thus, this case keep track of the CPU with the
-			 * smallest maximum capacity and highest spare maximum
-			 * capacity.
-			 */
-
-			/* Favor CPUs with smaller capacity */
-			if (capacity_orig > target_capacity)
-				continue;
-
-			/* Favor CPUs with maximum spare capacity */
-			if ((capacity_orig - new_util) < target_max_spare_cap)
-				continue;
-
-			target_max_spare_cap = capacity_orig - new_util;
-			target_capacity = capacity_orig;
-			target_util = new_util;
-			target_cpu = i;
 		}
 		se = __pick_next_entity(se);
 		num_tasks--;
@@ -9585,7 +9505,7 @@ static inline void update_cpu_stats_if_tickless(struct rq *rq)
 		raw_spin_lock(&rq->lock);
 		update_rq_clock(rq);
 		update_idle_cpu_load(rq);
-		update_cfs_rq_load_avg(rq->clock_task, &rq->cfs, false);
+		// update_cfs_rq_load_avg(rq->clock_task, &rq->cfs, false);
 		raw_spin_unlock(&rq->lock);
 	}
 }
