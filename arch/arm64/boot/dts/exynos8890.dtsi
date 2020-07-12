@@ -225,7 +225,7 @@
 		};
 
 		energy-costs {
-			compatible = "sched-energy";
+			compatible = "dyn-sched-energy";
 			
 			CPU_COST_1: core-cost1 {
 				busy-cost-data = <
