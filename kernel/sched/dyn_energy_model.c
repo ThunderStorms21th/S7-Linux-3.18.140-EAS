@@ -10,11 +10,11 @@
  *
  * Example:
  *	energy-costs {
- *		compatible = "sched-energy";
+ *		compatible = "dyn-sched-energy";
  *	}
  */
 
-#define pr_fmt(fmt) "sched-energy: " fmt
+#define pr_fmt(fmt) "dyn-sched-energy: " fmt
 
 #include <linux/gfp.h>
 #include <linux/of.h>
@@ -178,7 +178,7 @@ static int sched_energy_probe(struct platform_device *pdev)
 		update_topology = 0;
 	}
 	
-	dev_info(&pdev->dev, "Sched-energy-costs capacity updated\n");
+	dev_info(&pdev->dev, "Dyn-Sched-energy-costs capacity updated\n");
 	return 0;
 
 exit_rcu_unlock:
@@ -194,14 +194,14 @@ exit:
 
 static const struct of_device_id of_sched_energy_dt[] = {
 	{
-		.compatible = "sched-energy",
+		.compatible = "dyn-sched-energy",
 	},
 	{ }
 };
 
 static struct platform_driver energy_driver = {
 	.driver = {
-		.name = "sched-energy",
+		.name = "dyn-sched-energy",
 		.of_match_table = of_sched_energy_dt,
 	},
 	.probe = sched_energy_probe,
