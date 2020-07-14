@@ -201,10 +201,10 @@
 			CPU_SLEEP_BOOT: cpu-sleep-boot {
 				desc = "boot cluster cpu sleep";
 				compatible = "exynos,idle-state";
-				arm,psci-suspend-param = <0x0010000>;
-				entry-latency-us = <65>;
-				exit-latency-us = <140>;
-				min-residency-us = <1750>;
+				arm,psci-suspend-par0am = <0x0010000>;
+				entry-latency-us = <50>;
+				exit-latency-us = <100>;
+				min-residency-us = <1200>;
 				status = "okay";
 			};
 
@@ -212,9 +212,9 @@
 				desc = "non-boot cluster cpu sleep";
 				compatible = "exynos,idle-state";
 				arm,psci-suspend-param = <0x0010000>;
-				entry-latency-us = <130>;
-				exit-latency-us = <175>;
-				min-residency-us = <3000>;
+				entry-latency-us = <60>;
+				exit-latency-us = <90>;
+				min-residency-us = <2000>;
 				status = "okay";
 			};
 		};
@@ -224,32 +224,32 @@
 			
 			CPU_COST_1: core-cost1 {
 				busy-cost-data = <
-					312000 89
-					416000 119
-					520000 149
-					624000 179
-					728000 210
-					832000 255
-					936000 305
-					1040000 359
-					1144000 430
-					1248000 496
-					1352000 581
-					1456000 658
-					1560000 759
-					1664000 869
-					1768000 968
-					1872000 1096
-					1976000 1234
-					2080000 1355
-					2184000 1513
-					2288000 1716
-					2392000 1900
-					2496000 2058
-					2600000 2265
+					312000 99
+					416000 149
+					520000 179
+					624000 190
+					728000 230
+					832000 263
+					936000 296
+					1040000 340
+					1144000 407
+					1248000 470
+					1352000 537
+					1456000 626
+					1560000 705
+					1664000 810
+					1768000 924
+					1872000 1024
+					1976000 1156
+					2080000 1271
+					2184000 1422
+					2288000 1584
+					2392000 1725
+					2496000 1908
+					2600000 2104
 				>;
 				idle-cost-data = <
-					50 50 0 0
+					150 150 0 0
 				>;
 			};
 			CPU_COST_0: core-cost0 {
@@ -270,7 +270,7 @@
 					1586000 158
 				>;
 				idle-cost-data = <
-					20 20 0 0
+					10 10 0 0
 				>;
 			};
 			CLUSTER_COST_1: cluster-cost1 {
@@ -300,7 +300,7 @@
 					2600000 736
 				>;
 				idle-cost-data = <
-					15 15 0 0
+					50 50 0 0
 				>;
 			};
 			CLUSTER_COST_0: cluster-cost0 {
@@ -537,7 +537,7 @@
 		cl0_max_support_idx = <4>;
 		cl0_min_support_idx = <18>;
 		cl0_boot_max_qos = <1586000>;
-		cl0_boot_min_qos = <1066000>;
+		cl0_boot_min_qos = <1274000>;
 		cl0_en_ema = <1>;
 		cl0_min_qos_freq = <754000>;
 
@@ -546,7 +546,7 @@
 		cl1_max_support_idx = <4>;
 		cl1_min_support_idx = <27>;
 		cl1_boot_max_qos = <2288000>;
-		cl1_boot_min_qos = <1872000>;
+		cl1_boot_min_qos = <2288000>;
 		cl1_en_ema = <1>;
 		cl1_en_smpl = <1>;
 		cl1_jig_boot_max_qos = <1456000>;
