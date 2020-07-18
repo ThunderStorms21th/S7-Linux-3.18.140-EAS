@@ -36,9 +36,9 @@ static void em_debug_create_cs(struct em_cap_state *cs, struct dentry *pd)
 
 	/* Create per-cs directory */
 	d = debugfs_create_dir(name, pd);
-	debugfs_create_ulong("frequency", 0444, d, &cs->frequency);
-	debugfs_create_ulong("power", 0444, d, &cs->power);
-	debugfs_create_ulong("cost", 0444, d, &cs->cost);
+	debugfs_create_u64("frequency", 0444, d, &cs->frequency);
+	debugfs_create_u64("power", 0444, d, &cs->power);
+	debugfs_create_u64("cost", 0444, d, &cs->cost);
 }
 
 static int em_debug_cpus_show(struct seq_file *s, void *unused)
@@ -60,7 +60,7 @@ static void em_debug_create_pd(struct em_perf_domain *pd, int cpu)
 	/* Create the directory of the performance domain */
 	d = debugfs_create_dir(name, rootdir);
 
-	debugfs_create_file("cpus", 0444, d, pd->cpus, &em_debug_cpus_fops);
+	debugfs_create_file("cpus", 0444, d, pd->cpus, NULL);
 
 	/* Create a sub-directory for each capacity state */
 	for (i = 0; i < pd->nr_cap_states; i++)
