@@ -7115,10 +7115,6 @@ enum group_type {
 	group_overloaded,
 };
 
-	if (Larch_power)
-		capacity *= arch_scale_cpu_capacity(sd, cpu);
-	else
-		capacity *= default_scale_cpu_capacity(sd, cpu);
 #define LBF_ALL_PINNED	0x01
 #define LBF_NEED_BREAK	0x02
 #define LBF_DST_PINNED  0x04
@@ -7129,11 +7125,6 @@ struct lb_env {
 
 	struct rq		*src_rq;
 	int			src_cpu;
-
-	if (Larch_power)
-		capacity *= arch_scale_freq_capacity(sd, cpu);
-	else
-		capacity *= default_scale_capacity(sd, cpu);
 
 	int			dst_cpu;
 	struct rq		*dst_rq;
