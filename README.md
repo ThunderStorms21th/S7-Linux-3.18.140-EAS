@@ -11,6 +11,7 @@ Kernel Project by Team ThunderStorms
 - The Linux Kernel Archive for the Linux Patches <https://www.kernel.org/>
 - Samsung Open Source Release Center for the Source code <http://opensource.samsung.com/>
 - @ananjaser1211 @Kill-Switch for a Treble kernel source
+- @pascua28 for EAS kernel commits (and more) and help
 - @Arianoxx for a PIE kernel source
 - @morogoku, @Tkkg1994, @Noxxxious, @farovitus, and @mwilky for help, codes and commits
 - @Tetsuo_Osaka for ideas and kernel commits
