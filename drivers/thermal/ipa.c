@@ -1084,9 +1084,6 @@ static void ipa_setup_power_tables(void)
 			/ c_eff[CL_ONE].p_states[i].power;
 		pr_info("cluster: %d freq: %d power=%d\n", CL_ONE, t.freq, big_cpu_coeffs[i].power);
 	}
-	
-	sched_update_cpu_efficiency_table(&c_eff[CL_ZERO], CL_ZERO);
-	sched_update_cpu_efficiency_table(&c_eff[CL_ONE], CL_ONE);
 }
 
 static int setup_cpufreq_tables(int cl_idx)
