@@ -64,8 +64,8 @@ unsigned int sysctl_sched_cstate_aware = 1;
 
 #ifdef CONFIG_SCHED_WALT
 #ifdef CONFIG_SCHED_WALT_DEFAULT
-unsigned int sysctl_sched_use_walt_cpu_util = 1;
-unsigned int sysctl_sched_use_walt_task_util = 1;
+unsigned int sysctl_sched_use_walt_cpu_util = 0;    /* default is at 1 - enabled, 0 - disabled (better access to the tasks */
+unsigned int sysctl_sched_use_walt_task_util = 0;   /* default is at 1 - enabled, 0 - disabled (better access to the tasks */
 #else
 unsigned int sysctl_sched_use_walt_cpu_util = 0;
 unsigned int sysctl_sched_use_walt_task_util = 0;
