@@ -91,7 +91,7 @@ static atomic_t zswap_zero_pages = ATOMIC_INIT(0);
 * tunables
 **********************************/
 /* Enable/disable zswap (disabled by default) */
-static bool zswap_enabled;
+static bool zswap_enabled = 1;
 module_param_named(enabled, zswap_enabled, bool, 0644);
 
 /* Compressor to be used by zswap (fixed at boot for now) */
