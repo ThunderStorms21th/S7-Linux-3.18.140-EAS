@@ -57,28 +57,11 @@ echo " " >> $LOG;
 # Deepsleep fix - Tweaking logging, debugubg, tracing (@Chainfire)
 echo "## -- DeepSleep Fix" >> $LOG;
 
-dmesg -n 1 -C
 echo "N" > /sys/kernel/debug/debug_enabled
 echo "N" > /sys/kernel/debug/seclog/seclog_debug
 echo "0" > /sys/kernel/debug/tracing/tracing_on
 
-if [ -f /data/adb/su/su.d/000000deepsleep ]; then
-	rm -f /data/adb/su/su.d/000000deepsleep
-fi
-
-for i in `ls /sys/class/scsi_disk/`; do
-	cat /sys/class/scsi_disk/$i/write_protect 2>/dev/null | grep 1 >/dev/null
-	if [ $? -eq 0 ]; then
-		echo 'temporary none' > /sys/class/scsi_disk/$i/cache_type
-	fi
-done
 echo " " >> $LOG;
-
-# Disabling unauthorized changes warnings...
-echo "## -- Remove SecurityLogAgent" >> $LOG;
-if [ -d /system/app/SecurityLogAgent ]; then
-	rm -rf /system/app/SecurityLogAgent
-fi
 
 # Fix personalist.xml
 echo "## -- Fix Personal list" >> $LOG;
@@ -88,50 +71,34 @@ if [ ! -f /data/system/users/0/personalist.xml ]; then
 	chown system:system /data/system/users/0/personalist.xml
 fi
 
-# RMM patch (part)
-echo "## -- Removing RMM" >> $LOG;
-if [ -d /system/priv-app/Rlc ]; then
-	rm -rf /system/priv-app/Rlc
-fi
-
 ## ThunderStormS kill Google and Media servers script
-sleep 1
-# START LOOP 3600sec = 1h
-RUN_EVERY=10800
-(
-while : ; do
+# sleep 2
+
 # Google play services wakelock fix
 echo "## -- GooglePlay wakelock fix $( date +"%d-%m-%Y %H:%M:%S" )" >> $LOG;
-# KILL MEDIA
-if [ "`pgrep media`" ] && [ "`pgrep mediaserver`" ]; then
-# busybox killall -9 android.process.media
-# busybox killall -9 mediaserver
-busybox killall -9 com.google.android.gms
-busybox killall -9 com.google.android.gms.persistent
-busybox killall -9 com.google.process.gapps
-busybox killall -9 com.google.android.gsf
-busybox killall -9 com.google.android.gsf.persistent
-fi
 
-sleep 1
+# Disable collective Device administrators;
+# su -c "pm disable com.google.android.gms/com.google.android.gms.mdm.receivers.MdmDeviceAdminReceiver"
+
 # FIX GOOGLE PLAY SERVICE
-pm enable com.google.android.gms/.update.SystemUpdateActivity
-pm enable com.google.android.gms/.update.SystemUpdateService
-pm enable com.google.android.gms/.update.SystemUpdateService$ActiveReceiver
-pm enable com.google.android.gms/.update.SystemUpdateService$Receiver
-pm enable com.google.android.gms/.update.SystemUpdateService$SecretCodeReceiver
-pm enable com.google.android.gsf/.update.SystemUpdateActivity
-pm enable com.google.android.gsf/.update.SystemUpdatePanoActivity
-pm enable com.google.android.gsf/.update.SystemUpdateService
-pm enable com.google.android.gsf/.update.SystemUpdateService$Receiver
-pm enable com.google.android.gsf/.update.SystemUpdateService$SecretCodeReceiver
+# su -c "pm enable com.google.android.gms/.ads.AdRequestBrokerService"
+# su -c "pm enable com.google.android.gms/.ads.identifier.service.AdvertisingIdService"
+# su -c "pm enable com.google.android.gms/.ads.social.GcmSchedulerWakeupService"
+# su -c "pm enable com.google.android.gms/.analytics.AnalyticsService"
+# su -c "pm enable com.google.android.gms/.analytics.service.PlayLogMonitorIntervalService"
+# su -c "pm enable com.google.android.gms/.backup.BackupTransportService"
+# su -c "pm enable com.google.android.gms/.update.SystemUpdateActivity"
+# su -c "pm enable com.google.android.gms/.update.SystemUpdateService"
+# su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$ActiveReceiver"
+# su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$Receiver"
+# su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$SecretCodeReceiver"
+# su -c "pm enable com.google.android.gms/.thunderbird.settings.ThunderbirdSettingInjectorService"
+# su -c "pm enable com.google.android.gsf/.update.SystemUpdateActivity"
+# su -c "pm enable com.google.android.gsf/.update.SystemUpdatePanoActivity"
+# su -c "pm enable com.google.android.gsf/.update.SystemUpdateService"
+# su -c "pm enable com.google.android.gsf/.update.SystemUpdateService\$Receiver"
+# su -c "pm enable com.google.android.gsf/.update.SystemUpdateService\$SecretCodeReceiver"
 echo " " >> $LOG;
-
-sleep 10800
-
-done;
-)&
-# END OF LOOP
 
 # init.d
 echo "## -- Remove old Init.d scripts" >> $LOG

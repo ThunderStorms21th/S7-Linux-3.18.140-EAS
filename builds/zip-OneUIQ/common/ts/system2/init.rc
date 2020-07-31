@@ -12,7 +12,6 @@ import /init.usb.configfs.rc
 import /init.${ro.zygote}.rc
 import /init.container.rc
 import /init.custom.rc
-import /init.spectrum.rc
 import /init.ts.rc
 
 # Cgroups are mounted right before early-init using list from /etc/cgroups.json

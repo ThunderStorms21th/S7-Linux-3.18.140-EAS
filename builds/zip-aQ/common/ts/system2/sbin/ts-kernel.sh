@@ -32,17 +32,10 @@ fi
 	# deepsleep fix
 	echo "## -- DeepSleep Fix" >> $LOG;
 
-	dmesg -n 1 -C
 	echo "N" > /sys/kernel/debug/debug_enabled
 	echo "N" > /sys/kernel/debug/seclog/seclog_debug
 	echo "0" > /sys/kernel/debug/tracing/tracing_on
 	
-	for i in `ls /sys/class/scsi_disk/`; do
-		cat /sys/class/scsi_disk/$i/write_protect 2>/dev/null | grep 1 >/dev/null;
-		if [ $? -eq 0 ]; then
-			echo 'temporary none' > /sys/class/scsi_disk/$i/cache_type;
-		fi
-	done
 	echo " " >> $LOG;
 
 	# Fix personalist.xml
@@ -53,38 +46,31 @@ fi
 	fi
 
 	## ThunderStormS kill Google and Media servers script
-	sleep 10
+	# sleep 2
 
 	# Google play services wakelock fix
 	echo "## -- GooglePlay wakelock fix $( date +"%d-%m-%Y %H:%M:%S" )" >> $LOG;
 	
-	sleep 1
-
-	# Disable collective Device administrators;
-	su -c "pm disable com.google.android.gms/com.google.android.gms.mdm.receivers.MdmDeviceAdminReceiver"
-
 	# FIX GOOGLE PLAY SERVICE
-	su -c "pm enable com.google.android.gms/.ads.AdRequestBrokerService"
-	su -c "pm enable com.google.android.gms/.ads.identifier.service.AdvertisingIdService"
-	su -c "pm enable com.google.android.gms/.ads.social.GcmSchedulerWakeupService"
-	su -c "pm enable com.google.android.gms/.analytics.AnalyticsService"
-	su -c "pm enable com.google.android.gms/.analytics.service.PlayLogMonitorIntervalService"
-	su -c "pm enable com.google.android.gms/.backup.BackupTransportService"
-	su -c "pm enable com.google.android.gms/.update.SystemUpdateActivity"
-	su -c "pm enable com.google.android.gms/.update.SystemUpdateService"
-	su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$ActiveReceiver"
-	su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$Receiver"
-	su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$SecretCodeReceiver"
-	su -c "pm enable com.google.android.gms/.thunderbird.settings.ThunderbirdSettingInjectorService"
-	su -c "pm enable com.google.android.gsf/.update.SystemUpdateActivity"
-	su -c "pm enable com.google.android.gsf/.update.SystemUpdatePanoActivity"
-	su -c "pm enable com.google.android.gsf/.update.SystemUpdateService"
-	su -c "pm enable com.google.android.gsf/.update.SystemUpdateService\$Receiver"
-	su -c "pm enable com.google.android.gsf/.update.SystemUpdateService\$SecretCodeReceiver"
+	# su -c "pm enable com.google.android.gms/.ads.AdRequestBrokerService"
+	# su -c "pm enable com.google.android.gms/.ads.identifier.service.AdvertisingIdService"
+	# su -c "pm enable com.google.android.gms/.ads.social.GcmSchedulerWakeupService"
+	# su -c "pm enable com.google.android.gms/.analytics.AnalyticsService"
+	# su -c "pm enable com.google.android.gms/.analytics.service.PlayLogMonitorIntervalService"
+	# su -c "pm enable com.google.android.gms/.backup.BackupTransportService"
+	# su -c "pm enable com.google.android.gms/.update.SystemUpdateActivity"
+	# su -c "pm enable com.google.android.gms/.update.SystemUpdateService"
+	# su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$ActiveReceiver"
+	# su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$Receiver"
+	# su -c "pm enable com.google.android.gms/.update.SystemUpdateService\$SecretCodeReceiver"
+	# su -c "pm enable com.google.android.gms/.thunderbird.settings.ThunderbirdSettingInjectorService"
+	# su -c "pm enable com.google.android.gsf/.update.SystemUpdateActivity"
+	# su -c "pm enable com.google.android.gsf/.update.SystemUpdatePanoActivity"
+	# su -c "pm enable com.google.android.gsf/.update.SystemUpdateService"
+	# su -c "pm enable com.google.android.gsf/.update.SystemUpdateService\$Receiver"
+	# su -c "pm enable com.google.android.gsf/.update.SystemUpdateService\$SecretCodeReceiver"
 	echo " " >> $LOG;
 
-	# END OF LOOP
-	
 	# Init.d support
 	echo "## -- Start Init.d support" >> $LOG;
 	if [ ! -d /system/etc/init.d ]; then

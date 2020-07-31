@@ -4,7 +4,6 @@
 # This is a common source of Android security bugs.
 #
 
-import /init.spectrum.rc
 import /init.ts.rc
 
 on init
@@ -16,7 +15,7 @@ on property:sys.boot_completed=1
     start kernelinit
     stop proca
     stop secure_storage
-    # stop irisd
+    stop irisd
 
 
 service kernelinit /sbin/ts-kernel.sh
