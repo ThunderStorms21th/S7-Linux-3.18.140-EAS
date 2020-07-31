@@ -164,7 +164,7 @@
 			reg = <0x0 0x0>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_NONBOOT>;
-			efficiency = <1536>;
+			// efficiency = <1536>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
 		cpu@1 {
@@ -250,7 +250,7 @@
 				>;
 				idle-cost-data = <
 					15
-					10
+					15
 					0
 				>;
 			};
@@ -304,8 +304,8 @@
 					2600000 736
 				>;
 				idle-cost-data = <
-					50
-					50
+					135
+					135
 					0
 				>;
 			};
@@ -545,9 +545,9 @@
 		cl0_max_support_idx = <4>;
 		cl0_min_support_idx = <18>;
 		cl0_boot_max_qos = <1586000>;
-		cl0_boot_min_qos = <1274000>;
+		cl0_boot_min_qos = <1352000>;
 		cl0_en_ema = <1>;
-		cl0_min_qos_freq = <754000>;
+		cl0_min_qos_freq = <858000>;        /* 754000  */
 
 		/* MNGS */
 		cl1_idx_num = <28>;
@@ -557,9 +557,9 @@
 		cl1_boot_min_qos = <2080000>;
 		cl1_en_ema = <1>;
 		cl1_en_smpl = <1>;
-		cl1_jig_boot_max_qos = <1456000>;
-		cl1_reboot_limit_freq = <728000>;
-		cl1_min_qos_freq = <728000>;
+		cl1_jig_boot_max_qos = <1664000>;   /* 1456000 */
+		cl1_reboot_limit_freq = <832000>;   /* 728000  */
+		cl1_min_qos_freq = <832000>;        /* 728000  */
 		cl1_boost_freq = <2288000>;
 		cl1_max_support_idx_table = < 4	   /* Number of online core is 0 */
 					      4    /* Number of online core is 1 */
@@ -568,7 +568,7 @@
 					      4 >; /* Number of online core is 4 */
 
 		/* Boost freq*/
-		cl0_boost_freq = <754000>;
+		cl0_boost_freq = <858000>;          /* 754000 */
 
 		/*APO table ->	 idx   freq    volt   bus_lock */
 		cl0_dvfs_domain_name = "dvfs_little";
